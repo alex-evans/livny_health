@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button } from '../components/ui';
 import { useDebounce } from '../hooks';
 import { searchMedications } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User } from '../types';
 import { cn } from '../utils/cn';
+
+const testPatient = {
+  id: 'patient-001',
+  name: 'Test Patient',
+  dateOfBirth: '1985-03-15',
+  mrn: 'MRN-12345',
+};
 
 interface MedicationResultCardProps {
   medication: MedicationSearchResult;
@@ -108,8 +115,9 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
   );
 }
 
-export function PrescribePage() {
+export function PatientChartPage() {
   const navigate = useNavigate();
+  const { patientId } = useParams<{ patientId: string }>();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MedicationSearchResult[]>([]);
@@ -119,7 +127,9 @@ export function PrescribePage() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Load current user from session
+  // For now, just use the test patient
+  const patient = patientId === testPatient.id ? testPatient : null;
+
   useEffect(() => {
     const userJson = sessionStorage.getItem('currentUser');
     if (userJson) {
@@ -129,7 +139,6 @@ export function PrescribePage() {
     }
   }, [navigate]);
 
-  // Perform search when debounced value changes
   useEffect(() => {
     async function performSearch() {
       if (debouncedSearch.length < 3) {
@@ -178,36 +187,42 @@ export function PrescribePage() {
     setSelectedMedication(null);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('currentUser');
-    navigate('/');
+  const handleBack = () => {
+    navigate('/patients');
   };
 
-  if (!currentUser) {
+  if (!currentUser || !patient) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-snow">
-      {/* Header */}
       <header className="bg-white shadow-card">
-        <div className="max-w-5xl mx-auto px-generous py-normal flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-deep-ice">Medication Order</h1>
-            <p className="text-[13px] text-text-tertiary">Prescribing as {currentUser.name}</p>
+        <div className="max-w-5xl mx-auto px-generous py-normal">
+          <div className="flex items-center gap-normal mb-tight">
+            <button
+              onClick={handleBack}
+              className="text-text-tertiary hover:text-text-primary transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
+              <p className="text-[13px] text-text-tertiary">
+                DOB: {patient.dateOfBirth} | {patient.mrn}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-[15px] text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Switch User
-          </button>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-5xl mx-auto px-generous py-generous">
-        {/* Prescription Summary */}
+        <h2 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
+          Medications
+        </h2>
+
         {prescription.length > 0 && (
           <Card className="mb-comfortable">
             <CardContent>
@@ -228,7 +243,6 @@ export function PrescribePage() {
           </Card>
         )}
 
-        {/* Search Section */}
         <Card>
           <CardContent>
             <label
@@ -243,7 +257,6 @@ export function PrescribePage() {
               placeholder="Type at least 3 characters to search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
               autoComplete="off"
             />
 
@@ -255,14 +268,12 @@ export function PrescribePage() {
           </CardContent>
         </Card>
 
-        {/* Loading State */}
         {isSearching && (
           <div className="mt-normal text-center">
             <p className="text-[15px] text-text-secondary">Searching...</p>
           </div>
         )}
 
-        {/* Search Results */}
         {!isSearching && searchResults.length > 0 && !selectedMedication && (
           <div className="mt-normal">
             <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
@@ -281,7 +292,6 @@ export function PrescribePage() {
           </div>
         )}
 
-        {/* No Results */}
         {!isSearching && debouncedSearch.length >= 3 && searchResults.length === 0 && (
           <div className="mt-normal text-center py-generous">
             <p className="text-[15px] text-text-secondary">
@@ -290,7 +300,6 @@ export function PrescribePage() {
           </div>
         )}
 
-        {/* Selected Medication Details */}
         {selectedMedication && (
           <MedicationDetails
             medication={selectedMedication}

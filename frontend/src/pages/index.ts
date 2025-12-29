@@ -1,2 +1,3 @@
 export { LoginPage } from './LoginPage';
-export { PrescribePage } from './PrescribePage';
+export { PatientListPage } from './PatientListPage';
+export { PatientChartPage } from './PatientChartPage';

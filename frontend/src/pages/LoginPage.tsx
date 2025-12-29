@@ -19,7 +19,7 @@ export function LoginPage() {
       role: 'physician',
       specialty: drEmily.specialty,
     }));
-    navigate('/prescribe');
+    navigate('/patients');
   };
 
   return (
