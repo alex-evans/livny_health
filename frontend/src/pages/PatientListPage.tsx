@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui';
-import type { User } from '../types';
+import { getPatients } from '../api';
+import type { User, Patient } from '../types';
 
-const testPatient = {
-  id: 'patient-001',
-  name: 'Test Patient',
-  dateOfBirth: '1985-03-15',
-  mrn: 'MRN-12345',
-};
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export function PatientListPage() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const userJson = sessionStorage.getItem('currentUser');
@@ -22,6 +28,22 @@ export function PatientListPage() {
       navigate('/');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const data = await getPatients();
+        setPatients(data);
+      } catch (err) {
+        setError('Failed to load patients');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPatients();
+  }, []);
 
   const handlePatientSelect = (patientId: string) => {
     navigate(`/patients/${patientId}`);
@@ -54,20 +76,36 @@ export function PatientListPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-generous py-generous">
+        {loading && (
+          <p className="text-[15px] text-text-secondary">Loading patients...</p>
+        )}
+
+        {error && (
+          <p className="text-[15px] text-critical">{error}</p>
+        )}
+
+        {!loading && !error && patients.length === 0 && (
+          <p className="text-[15px] text-text-secondary">No patients found</p>
+        )}
+
         <div className="flex flex-col gap-normal">
-          <Card hoverable onClick={() => handlePatientSelect(testPatient.id)}>
-            <div className="flex items-center gap-normal">
-              <div className="w-12 h-12 rounded-full bg-arctic flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-semibold text-deep-ice">TP</span>
+          {patients.map((patient) => (
+            <Card key={patient.id} hoverable onClick={() => handlePatientSelect(patient.id)}>
+              <div className="flex items-center gap-normal">
+                <div className="w-12 h-12 rounded-full bg-arctic flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg font-semibold text-deep-ice">
+                    {getInitials(patient.name)}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-[15px] font-semibold text-text-primary">{patient.name}</h2>
+                  <p className="text-[13px] text-text-secondary">
+                    DOB: {patient.dateOfBirth} | {patient.mrn}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-[15px] font-semibold text-text-primary">{testPatient.name}</h2>
-                <p className="text-[13px] text-text-secondary">
-                  DOB: {testPatient.dateOfBirth} | {testPatient.mrn}
-                </p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          ))}
         </div>
       </main>
     </div>
