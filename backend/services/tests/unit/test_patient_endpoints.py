@@ -34,9 +34,8 @@ class TestGetPatients:
         # Check first patient has expected structure
         first_patient = patients[0]
         assert "id" in first_patient
-        assert "first_name" in first_patient
-        assert "last_name" in first_patient
-        assert "date_of_birth" in first_patient
+        assert "name" in first_patient
+        assert "dateOfBirth" in first_patient
         assert "mrn" in first_patient
     
     def test_get_patients_data_types(self, client):
@@ -44,10 +43,9 @@ class TestGetPatients:
         response = client.get("/patients")
         first_patient = response.json()[0]
         
-        assert isinstance(first_patient["id"], int)
-        assert isinstance(first_patient["first_name"], str)
-        assert isinstance(first_patient["last_name"], str)
-        assert isinstance(first_patient["date_of_birth"], str)
+        assert isinstance(first_patient["id"], str)
+        assert isinstance(first_patient["name"], str)
+        assert isinstance(first_patient["dateOfBirth"], str)
         assert isinstance(first_patient["mrn"], str)
     
     def test_get_patients_consistent_data(self, client):
