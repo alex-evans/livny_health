@@ -52,13 +52,13 @@ class TestSearchMedications:
     
     def test_search_medications_partial_match(self, client):
         """Should find medications with partial name match"""
-        response = client.get("/medications/search?q=stat")
+        response = client.get("/medications/search?q=amox")
         medications = response.json()
         
-        # Should find medications containing "stat" (like simvastatin, atorvastatin)
+        # Should find medications containing "amox" 
         assert len(medications) > 0
         for med in medications:
-            assert "stat" in med["name"].lower()
+            assert "amox" in med["name"].lower()
     
     def test_search_medications_structure(self, client):
         """Each medication should have required fields"""
@@ -69,6 +69,8 @@ class TestSearchMedications:
         first_med = medications[0]
         
         # Check expected fields exist
+        assert "rxcui" in first_med
+        assert "tty" in first_med
         assert "name" in first_med
     
     def test_search_medications_data_types(self, client):
@@ -76,6 +78,8 @@ class TestSearchMedications:
         response = client.get("/medications/search?q=amox")
         first_med = response.json()[0]
         
+        assert isinstance(first_med["rxcui"], str)
+        assert isinstance(first_med["tty"], str)
         assert isinstance(first_med["name"], str)
 
 
@@ -110,7 +114,8 @@ class TestSearchMedicationsValidation:
         # Could either reject or return empty results
         assert response.status_code in [
             status.HTTP_200_OK,
-            status.HTTP_422_UNPROCESSABLE_ENTITY
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_400_BAD_REQUEST
         ]
 
 
