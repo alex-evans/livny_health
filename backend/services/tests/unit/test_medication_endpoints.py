@@ -69,17 +69,21 @@ class TestSearchMedications:
         first_med = medications[0]
         
         # Check expected fields exist
-        assert "rxcui" in first_med
-        assert "tty" in first_med
+        assert "commonDosing" in first_med
+        assert "form" in first_med
+        assert "id" in first_med
         assert "name" in first_med
+        assert "isControlled" in first_med
     
     def test_search_medications_data_types(self, client):
         """Medication fields should have correct types"""
         response = client.get("/medications/search?q=amox")
         first_med = response.json()[0]
         
-        assert isinstance(first_med["rxcui"], str)
-        assert isinstance(first_med["tty"], str)
+        assert isinstance(first_med["commonDosing"], list)
+        assert isinstance(first_med["form"], str)
+        assert isinstance(first_med["id"], str)
+        assert isinstance(first_med["isControlled"], bool)
         assert isinstance(first_med["name"], str)
 
 
