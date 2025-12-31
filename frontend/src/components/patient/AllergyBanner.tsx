@@ -21,11 +21,38 @@ const severityConfig: Record<AllergySeverity, { label: string; className: string
 };
 
 export function AllergyBanner({ allergies }: AllergyBannerProps) {
-  if (allergies.length === 0) {
-    return null;
-  }
-
+  const hasAllergies = allergies.length > 0;
   const hasSevereAllergy = allergies.some((a) => a.severity === 'severe');
+
+  if (!hasAllergies) {
+    return (
+      <div
+        className="px-generous py-normal bg-arctic"
+        role="status"
+        aria-label="No known allergies"
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center gap-tight">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-success"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-[15px] font-medium text-text-primary">
+              No known allergies
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -1,3 +1,3 @@
 export { searchMedications } from './medicationApi';
-export { getPatients } from './patientApi';
+export { getPatients, getPatient } from './patientApi';
 export { mockUsers, mockMedications } from './mockData';

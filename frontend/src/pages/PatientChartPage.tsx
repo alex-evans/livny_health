@@ -4,55 +4,9 @@ import { Card, CardContent, Input, Button } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications } from '../api';
+import { searchMedications, getPatient } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
 import { cn } from '../utils/cn';
-
-const testPatient: Patient = {
-  id: 'patient-001',
-  name: 'Test Patient',
-  dateOfBirth: '1985-03-15',
-  mrn: 'MRN-12345',
-  allergies: [
-    {
-      id: 'allergy-1',
-      allergen: 'Penicillin',
-      reaction: 'Anaphylaxis',
-      severity: 'severe',
-      documented: '2020-01-15',
-    },
-    {
-      id: 'allergy-2',
-      allergen: 'Sulfa',
-      reaction: 'Rash',
-      severity: 'moderate',
-      documented: '2019-06-20',
-    },
-  ],
-  activeMedications: [
-    {
-      id: 'med-1',
-      name: 'Lisinopril',
-      dosage: '10mg',
-      frequency: 'daily',
-      started: '2023-06-15',
-    },
-    {
-      id: 'med-2',
-      name: 'Metformin',
-      dosage: '500mg',
-      frequency: 'twice daily',
-      started: '2022-03-10',
-    },
-    {
-      id: 'med-3',
-      name: 'Atorvastatin',
-      dosage: '20mg',
-      frequency: 'at bedtime',
-      started: '2023-01-05',
-    },
-  ],
-};
 
 interface MedicationResultCardProps {
   medication: MedicationSearchResult;
@@ -173,6 +127,9 @@ export function PatientChartPage() {
   const navigate = useNavigate();
   const { patientId } = useParams<{ patientId: string }>();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [isLoadingPatient, setIsLoadingPatient] = useState(true);
+  const [patientError, setPatientError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MedicationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -180,9 +137,6 @@ export function PatientChartPage() {
   const [prescription, setPrescription] = useState<SelectedMedication[]>([]);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
-
-  // For now, just use the test patient
-  const patient = patientId === testPatient.id ? testPatient : null;
 
   useEffect(() => {
     const userJson = sessionStorage.getItem('currentUser');
@@ -192,6 +146,27 @@ export function PatientChartPage() {
       navigate('/');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    async function fetchPatient() {
+      if (!patientId) {
+        setPatientError('No patient ID provided');
+        setIsLoadingPatient(false);
+        return;
+      }
+
+      try {
+        const patientData = await getPatient(patientId);
+        setPatient(patientData);
+      } catch (err) {
+        setPatientError(err instanceof Error ? err.message : 'Failed to load patient');
+      } finally {
+        setIsLoadingPatient(false);
+      }
+    }
+
+    fetchPatient();
+  }, [patientId]);
 
   useEffect(() => {
     async function performSearch() {
@@ -245,15 +220,34 @@ export function PatientChartPage() {
     navigate('/patients');
   };
 
-  if (!currentUser || !patient) {
+  if (!currentUser) {
     return null;
+  }
+
+  if (isLoadingPatient) {
+    return (
+      <div className="min-h-screen bg-snow flex items-center justify-center">
+        <p className="text-[15px] text-text-secondary">Loading patient...</p>
+      </div>
+    );
+  }
+
+  if (patientError || !patient) {
+    return (
+      <div className="min-h-screen bg-snow flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[15px] text-critical mb-normal">{patientError || 'Patient not found'}</p>
+          <Button variant="secondary" onClick={() => navigate('/patients')}>
+            Back to Patients
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-snow">
-      {patient.allergies && patient.allergies.length > 0 && (
-        <AllergyBanner allergies={patient.allergies} />
-      )}
+      <AllergyBanner allergies={patient.allergies ?? []} />
       <header className="bg-white shadow-card">
         <div className="max-w-5xl mx-auto px-generous py-normal">
           <div className="flex items-center gap-normal mb-tight">

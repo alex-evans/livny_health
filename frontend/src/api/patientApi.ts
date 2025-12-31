@@ -9,3 +9,14 @@ export async function getPatients(): Promise<Patient[]> {
   }
   return response.json();
 }
+
+export async function getPatient(patientId: string): Promise<Patient> {
+  const response = await fetch(`${BFF_URL}/api/patients/${patientId}`);
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Patient not found');
+    }
+    throw new Error('Failed to fetch patient');
+  }
+  return response.json();
+}
