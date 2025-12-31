@@ -56,6 +56,8 @@ interface MedicationDetailsProps {
 }
 
 function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: MedicationDetailsProps) {
+  const hasCommonDosing = medication.commonDosing && medication.commonDosing.length > 0;
+
   return (
     <Card className="mt-normal">
       <CardContent>
@@ -63,7 +65,9 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
           <div>
             <h3 className="text-xl font-semibold text-deep-ice">{medication.name}</h3>
             <p className="text-[15px] text-text-secondary mt-1">
-              {medication.form} - {medication.strength}
+              {medication.form && medication.strength
+                ? `${medication.form} - ${medication.strength}`
+                : medication.form || medication.strength || ''}
             </p>
           </div>
           <button
@@ -78,24 +82,33 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
 
         <div className="mb-comfortable">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
-            Common Dosing
+            {hasCommonDosing ? 'Common Dosing' : 'Dosing Instructions'}
           </label>
-          <div className="flex flex-wrap gap-tight">
-            {medication.commonDosing.map((dosing) => (
-              <button
-                key={dosing}
-                onClick={() => onDosingSelect(dosing)}
-                className={cn(
-                  'px-4 py-2 rounded-md text-[15px] transition-all duration-150',
-                  medication.selectedDosing === dosing
-                    ? 'bg-glacier-blue text-white'
-                    : 'bg-frost text-text-primary hover:bg-arctic'
-                )}
-              >
-                {dosing}
-              </button>
-            ))}
-          </div>
+          {hasCommonDosing ? (
+            <div className="flex flex-wrap gap-tight">
+              {medication.commonDosing.map((dosing) => (
+                <button
+                  key={dosing}
+                  onClick={() => onDosingSelect(dosing)}
+                  className={cn(
+                    'px-4 py-2 rounded-md text-[15px] transition-all duration-150',
+                    medication.selectedDosing === dosing
+                      ? 'bg-glacier-blue text-white'
+                      : 'bg-frost text-text-primary hover:bg-arctic'
+                  )}
+                >
+                  {dosing}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Input
+              type="text"
+              placeholder="e.g., 500mg twice daily"
+              value={medication.selectedDosing || ''}
+              onChange={(e) => onDosingSelect(e.target.value)}
+            />
+          )}
         </div>
 
         <div className="flex justify-end gap-normal pt-normal border-t border-frost">

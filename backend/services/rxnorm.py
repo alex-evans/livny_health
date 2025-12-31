@@ -1,12 +1,28 @@
+import re
+
 import httpx
 
 RXNORM_BASE_URL = "https://rxnav.nlm.nih.gov/REST"
+
+FORM_PATTERNS = {
+    "Oral Tablet": "tablet",
+    "Oral Capsule": "capsule",
+    "Oral Solution": "liquid",
+    "Oral Suspension": "liquid",
+    "Injectable Solution": "injection",
+    "Injection": "injection",
+    "Topical Cream": "topical",
+    "Topical Ointment": "topical",
+    "Topical Gel": "topical",
+    "Metered Dose Inhaler": "inhaler",
+    "Inhalation Powder": "inhaler",
+}
 
 
 async def search_medications(query: str) -> list[dict]:
     """
     Search RxNorm for medications matching the query.
-    Returns a list of medications with rxcui, name, and tty.
+    Returns medications in frontend-compatible format.
     """
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -33,10 +49,29 @@ def _parse_drug_response(data: dict) -> list[dict]:
             continue
 
         for concept in group.get("conceptProperties", []):
+            name = concept.get("name", "")
             medications.append({
-                "rxcui": concept.get("rxcui", ""),
-                "name": concept.get("name", ""),
-                "tty": tty,
+                "id": concept.get("rxcui", ""),
+                "name": name,
+                "strength": _extract_strength(name),
+                "form": _extract_form(name),
+                "commonDosing": [],
+                "isControlled": False,
             })
 
     return medications
+
+
+def _extract_strength(name: str) -> str:
+    """Extract strength from RxNorm drug name (e.g., '500 MG' from 'Amoxicillin 500 MG Oral Tablet')."""
+    match = re.search(r"(\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)?\s*(?:MG|MCG|MG/ML|UNITS?|%|MEQ))", name, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _extract_form(name: str) -> str:
+    """Extract dosage form from RxNorm drug name."""
+    name_upper = name.upper()
+    for pattern, form in FORM_PATTERNS.items():
+        if pattern.upper() in name_upper:
+            return form
+    return ""
