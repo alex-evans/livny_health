@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
@@ -28,4 +32,39 @@ jobs:
         run: uv sync --dev
 
       - name: Run unit tests
-        run: uv run pytest -m unit
+        id: pytest
+        run: |
+          uv run pytest -m unit --cov=. --cov-report=term-missing --cov-report=xml --tb=short 2>&1 | tee pytest-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Create coverage report
+        if: github.event_name == 'pull_request'
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: backend/services/coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post test results to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('backend/services/pytest-output.txt', 'utf8');
+
+            const body = `## Unit Test Results
+
+            \`\`\`
+            ${output.slice(-3000)}
+            \`\`\`
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Check test status
+        run: exit ${{ steps.pytest.outputs.exit_code }}
