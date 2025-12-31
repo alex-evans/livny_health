@@ -1,16 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button } from '../components/ui';
+import { AllergyBanner } from '../components/patient';
 import { useDebounce } from '../hooks';
 import { searchMedications } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User } from '../types';
+import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
 import { cn } from '../utils/cn';
 
-const testPatient = {
+const testPatient: Patient = {
   id: 'patient-001',
   name: 'Test Patient',
   dateOfBirth: '1985-03-15',
   mrn: 'MRN-12345',
+  allergies: [
+    {
+      id: 'allergy-1',
+      allergen: 'Penicillin',
+      reaction: 'Anaphylaxis',
+      severity: 'severe',
+      documented: '2020-01-15',
+    },
+    {
+      id: 'allergy-2',
+      allergen: 'Sulfa',
+      reaction: 'Rash',
+      severity: 'moderate',
+      documented: '2019-06-20',
+    },
+  ],
 };
 
 interface MedicationResultCardProps {
@@ -210,6 +227,9 @@ export function PatientChartPage() {
 
   return (
     <div className="min-h-screen bg-snow">
+      {patient.allergies && patient.allergies.length > 0 && (
+        <AllergyBanner allergies={patient.allergies} />
+      )}
       <header className="bg-white shadow-card">
         <div className="max-w-5xl mx-auto px-generous py-normal">
           <div className="flex items-center gap-normal mb-tight">

@@ -1,0 +1,1 @@
+export { AllergyBanner } from './AllergyBanner';
