@@ -21,3 +21,11 @@ export interface MedicationSearchResult {
 export interface SelectedMedication extends MedicationSearchResult {
   selectedDosing?: string;
 }
+
+export interface ActiveMedication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  started: string;
+}

@@ -1,3 +1,5 @@
+import type { ActiveMedication } from './medication';
+
 export type AllergySeverity = 'mild' | 'moderate' | 'severe';
 
 export interface Allergy {
@@ -14,4 +16,5 @@ export interface Patient {
   dateOfBirth: string;
   mrn: string;
   allergies?: Allergy[];
+  activeMedications?: ActiveMedication[];
 }

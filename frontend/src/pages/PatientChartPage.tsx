@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
+import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
 import { searchMedications } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
@@ -26,6 +27,29 @@ const testPatient: Patient = {
       reaction: 'Rash',
       severity: 'moderate',
       documented: '2019-06-20',
+    },
+  ],
+  activeMedications: [
+    {
+      id: 'med-1',
+      name: 'Lisinopril',
+      dosage: '10mg',
+      frequency: 'daily',
+      started: '2023-06-15',
+    },
+    {
+      id: 'med-2',
+      name: 'Metformin',
+      dosage: '500mg',
+      frequency: 'twice daily',
+      started: '2022-03-10',
+    },
+    {
+      id: 'med-3',
+      name: 'Atorvastatin',
+      dosage: '20mg',
+      frequency: 'at bedtime',
+      started: '2023-01-05',
     },
   ],
 };
@@ -255,6 +279,10 @@ export function PatientChartPage() {
         <h2 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
           Medications
         </h2>
+
+        {patient.activeMedications && patient.activeMedications.length > 0 && (
+          <ActiveMedicationsList medications={patient.activeMedications} />
+        )}
 
         {prescription.length > 0 && (
           <Card className="mb-comfortable">
