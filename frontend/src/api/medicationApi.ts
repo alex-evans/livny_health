@@ -1,20 +1,15 @@
 import type { MedicationSearchResult } from '../types';
-import { mockMedications } from './mockData';
 
-// Simulates network delay for realistic UX testing
-const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const BFF_URL = 'http://localhost:8000';
 
 export async function searchMedications(query: string): Promise<MedicationSearchResult[]> {
-  // Simulate API latency
-  await simulateDelay(150);
-
   if (query.length < 3) {
     return [];
   }
 
-  const lowerQuery = query.toLowerCase();
-
-  return mockMedications.filter(med =>
-    med.name.toLowerCase().includes(lowerQuery)
-  );
+  const response = await fetch(`${BFF_URL}/api/medications/search?q=${encodeURIComponent(query)}`);
+  if (!response.ok) {
+    throw new Error('Failed to search medications');
+  }
+  return response.json();
 }

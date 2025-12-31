@@ -1,41 +1,21 @@
-from fastapi import FastAPI
+
+from fastapi import FastAPI, Query
+
+from fake_data import FAKE_PATIENTS, FAKE_MEDICATIONS
+
 
 app = FastAPI(title="Livny Health Services", version="0.1.0")
-
-FAKE_PATIENTS = [
-    {
-        "id": "patient-001",
-        "name": "Sarah Johnson",
-        "dateOfBirth": "1985-03-15",
-        "mrn": "MRN-10001",
-    },
-    {
-        "id": "patient-002",
-        "name": "Michael Chen",
-        "dateOfBirth": "1972-08-22",
-        "mrn": "MRN-10002",
-    },
-    {
-        "id": "patient-003",
-        "name": "Emily Rodriguez",
-        "dateOfBirth": "1990-11-08",
-        "mrn": "MRN-10003",
-    },
-    {
-        "id": "patient-004",
-        "name": "James Williams",
-        "dateOfBirth": "1968-05-30",
-        "mrn": "MRN-10004",
-    },
-    {
-        "id": "patient-005",
-        "name": "Maria Garcia",
-        "dateOfBirth": "1995-01-17",
-        "mrn": "MRN-10005",
-    },
-]
 
 
 @app.get("/patients")
 async def get_patients():
     return FAKE_PATIENTS
+
+
+@app.get("/medications/search")
+async def search_medications(q: str = Query(..., min_length=3)):
+    query_lower = q.lower()
+    return [
+        med for med in FAKE_MEDICATIONS
+        if query_lower in med["name"].lower()
+    ]
