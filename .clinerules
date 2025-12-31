@@ -1,0 +1,43 @@
+# Livny Health - Claude Code Instructions
+
+## Auto-Reference Files
+Before every response, consult:
+1. `.claude/DESIGN_SYSTEM.md` - UI/styling
+2. `.claude/COMPONENT_PATTERNS.md` - Code structure
+3. `.claude/API_CONTRACTS.md` - API specs
+4. `frontend/tailwind.config.js` - Color/spacing tokens
+
+## Project: Livny Health EHR
+Modern, clean EHR with ice/Nordic aesthetic. Current focus: physician prescribing workflow.
+
+## Stack
+React 18 + TypeScript + Tailwind + FastAPI
+
+## Standards
+- Named exports, TypeScript strict mode
+- Tailwind only (no CSS modules)
+- Ice theme: glacier-blue, deep-ice, arctic
+- 8px spacing: tight/normal/comfortable/generous
+- Cards > tables, white space > clutter
+- Progressive disclosure, 2-3 actions max
+
+## Component Rules
+- UI components → `src/components/ui/`
+- Domain components → `src/components/{domain}/`
+- Include loading/error/empty states
+- Follow template in COMPONENT_PATTERNS.md
+- Reuse existing before creating new
+
+## Design Principles
+- Generous white space
+- Subtle shadows (not borders)
+- Max 3 colors per screen
+- 15px min font size
+- One primary task visible
+
+## Don't
+- Default exports
+- Inline styles
+- Heavy borders
+- Table layouts (prefer cards)
+- Cramped content

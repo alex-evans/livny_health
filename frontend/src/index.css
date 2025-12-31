@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* Ice/Snow */
+  --color-snow: #F8FAFB;
+  --color-frost: #F0F4F7;
+
+  /* Nordic Blue */
+  --color-glacier-blue: #4A90E2;
+  --color-deep-ice: #2E5C8A;
+  --color-arctic: #E8F2F9;
+
+  /* Functional */
+  --color-critical: #E74C3C;
+  --color-warning: #F39C12;
+  --color-success: #27AE60;
+  --color-info: #3498DB;
+
+  /* Text */
+  --color-text-primary: #2C3E50;
+  --color-text-secondary: #5D6D7E;
+  --color-text-tertiary: #95A5A6;
+
+  /* Spacing */
+  --spacing-tight: 8px;
+  --spacing-normal: 16px;
+  --spacing-comfortable: 24px;
+  --spacing-generous: 32px;
+  --spacing-section: 48px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  /* Font */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-snow);
+  color: var(--color-text-primary);
+}
+
+/* Remove default search input styling */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
