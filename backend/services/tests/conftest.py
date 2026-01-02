@@ -1,7 +1,12 @@
-
 import pytest
 import sys
 from pathlib import Path
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "unit: marks tests as unit tests")
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+
 
 # Add parent directory to Python path
 parent_dir = Path(__file__).parent.parent

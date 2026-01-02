@@ -9,3 +9,17 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "httpx>=0.28.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-sugar>=1.1.1",
+    "respx>=0.22.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+]

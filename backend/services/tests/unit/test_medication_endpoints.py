@@ -94,12 +94,12 @@ class TestSearchMedicationsValidation:
     def test_search_medications_missing_query_param(self, client):
         """Should return 422 when query parameter is missing"""
         response = client.get("/medications/search")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     def test_search_medications_query_too_short(self, client):
         """Should return 422 when query is less than 3 characters"""
         response = client.get("/medications/search?q=ab")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     def test_search_medications_query_exactly_3_chars(self, client):
         """Should accept query with exactly 3 characters"""
@@ -110,7 +110,7 @@ class TestSearchMedicationsValidation:
     def test_search_medications_empty_query(self, client):
         """Should return 422 for empty query string"""
         response = client.get("/medications/search?q=")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     def test_search_medications_whitespace_only(self, client):
         """Should handle whitespace-only query appropriately"""
@@ -118,7 +118,7 @@ class TestSearchMedicationsValidation:
         # Could either reject or return empty results
         assert response.status_code in [
             status.HTTP_200_OK,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             status.HTTP_400_BAD_REQUEST
         ]
 

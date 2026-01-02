@@ -16,3 +16,9 @@ dev = [
     "pytest-cov>=6.0.0",
     "pytest-sugar>=1.1.1",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+]
