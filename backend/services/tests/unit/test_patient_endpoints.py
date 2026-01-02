@@ -56,18 +56,16 @@ class TestGetPatients:
         assert response1.json() == response2.json()
 
 
-# Future tests when you add more patient endpoints
 @pytest.mark.unit
 class TestGetPatientById:
-    """Tests for GET /patients/{patient_id} endpoint (not implemented yet)"""
+    """Tests for GET /patients/{patient_id} endpoint"""
     
-    @pytest.mark.skip(reason="Endpoint not implemented yet")
     def test_get_patient_by_id_returns_200(self, client):
         """Should return 200 for existing patient"""
-        response = client.get("/patients/1")
+        patients = client.get("/patients").json()
+        response = client.get(f"/patients/{patients[0]['id']}")
         assert response.status_code == status.HTTP_200_OK
     
-    @pytest.mark.skip(reason="Endpoint not implemented yet")
     def test_get_patient_by_id_not_found(self, client):
         """Should return 404 for non-existent patient"""
         response = client.get("/patients/99999")
@@ -92,7 +90,7 @@ class TestCreatePatient:
             # Missing last_name, dob, etc.
         }
         response = client.post("/patients", json=incomplete_data)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     @pytest.mark.skip(reason="Endpoint not implemented yet")
     def test_create_patient_invalid_date_format(self, client):
@@ -104,4 +102,38 @@ class TestCreatePatient:
             "mrn": "MRN-001"
         }
         response = client.post("/patients", json=invalid_data)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+@pytest.mark.unit
+class TestGetPatientAllergies:
+    """Tests for GET /patients/{patient_id}/allergies endpoint"""
+    
+    def test_get_patient_allergies_returns_200(self, client):
+        """Should return 200 for existing patient"""
+        patients = client.get("/patients").json()
+        response = client.get(f"/patients/{patients[0]['id']}/allergies")
+        assert response.status_code == status.HTTP_200_OK
+    
+    def test_get_patient_allergies_not_found(self, client):
+        """Should return 404 for non-existent patient"""
+        response = client.get("/patients/99999/allergies")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.unit
+class TestGetPatientMedications:
+    """Tests for GET /patients/{patient_id}/medications endpoint"""
+    
+    def test_get_patient_medications_returns_200(self, client):
+        """Should return 200 for existing patient"""
+        patients = client.get("/patients").json()
+        response = client.get(f"/patients/{patients[0]['id']}/medications")
+        assert response.status_code == status.HTTP_200_OK
+    
+    def test_get_patient_medications_not_found(self, client):
+        """Should return 404 for non-existent patient"""
+        response = client.get("/patients/99999/medications")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+

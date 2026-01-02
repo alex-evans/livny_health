@@ -33,30 +33,131 @@ FAKE_PATIENTS = [
         "name": "Sarah Johnson",
         "dateOfBirth": "1985-03-15",
         "mrn": "MRN-10001",
+        "allergies": [
+            {
+                "id": "allergy-1",
+                "allergen": "Penicillin",
+                "reaction": "Anaphylaxis",
+                "severity": "severe",
+                "documented": "2020-01-15",
+            },
+            {
+                "id": "allergy-2",
+                "allergen": "Sulfa",
+                "reaction": "Rash",
+                "severity": "moderate",
+                "documented": "2019-06-20",
+            },
+        ],
+        "activeMedications": [
+            {
+                "id": "med-1",
+                "name": "Lisinopril",
+                "dosage": "10mg",
+                "frequency": "daily",
+                "started": "2023-06-15",
+            },
+            {
+                "id": "med-2",
+                "name": "Metformin",
+                "dosage": "500mg",
+                "frequency": "twice daily",
+                "started": "2022-03-10",
+            },
+            {
+                "id": "med-3",
+                "name": "Atorvastatin",
+                "dosage": "20mg",
+                "frequency": "at bedtime",
+                "started": "2023-01-05",
+            },
+        ],
     },
     {
         "id": "patient-002",
         "name": "Michael Chen",
         "dateOfBirth": "1972-08-22",
         "mrn": "MRN-10002",
+        "allergies": [
+            {
+                "id": "allergy-3",
+                "allergen": "Aspirin",
+                "reaction": "Hives",
+                "severity": "mild",
+                "documented": "2018-04-10",
+            },
+        ],
+        "activeMedications": [
+            {
+                "id": "med-4",
+                "name": "Omeprazole",
+                "dosage": "20mg",
+                "frequency": "daily before breakfast",
+                "started": "2024-01-20",
+            },
+        ],
     },
     {
         "id": "patient-003",
         "name": "Emily Rodriguez",
         "dateOfBirth": "1990-11-08",
         "mrn": "MRN-10003",
+        "allergies": [],
+        "activeMedications": [
+            {
+                "id": "med-5",
+                "name": "Albuterol inhaler",
+                "dosage": "90mcg",
+                "frequency": "as needed",
+                "started": "2023-09-01",
+            },
+        ],
     },
     {
         "id": "patient-004",
         "name": "James Williams",
         "dateOfBirth": "1968-05-30",
         "mrn": "MRN-10004",
+        "allergies": [
+            {
+                "id": "allergy-4",
+                "allergen": "Codeine",
+                "reaction": "Nausea and vomiting",
+                "severity": "moderate",
+                "documented": "2015-08-22",
+            },
+            {
+                "id": "allergy-5",
+                "allergen": "Latex",
+                "reaction": "Contact dermatitis",
+                "severity": "mild",
+                "documented": "2010-03-15",
+            },
+        ],
+        "activeMedications": [
+            {
+                "id": "med-6",
+                "name": "Amlodipine",
+                "dosage": "5mg",
+                "frequency": "daily",
+                "started": "2021-11-30",
+            },
+            {
+                "id": "med-7",
+                "name": "Gabapentin",
+                "dosage": "300mg",
+                "frequency": "three times daily",
+                "started": "2023-04-15",
+            },
+        ],
     },
     {
         "id": "patient-005",
         "name": "Maria Garcia",
         "dateOfBirth": "1995-01-17",
         "mrn": "MRN-10005",
+        "allergies": [],
+        "activeMedications": [],
     },
 ]
 

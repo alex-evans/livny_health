@@ -39,7 +39,7 @@ export async function searchMedications(query: string): Promise<MedicationSearch
     return cached;
   }
 
-  const response = await fetch(`${BFF_URL}/api/medications/search?q=${encodeURIComponent(query)}`);
+  const response = await fetch(`${BFF_URL}/medications/search?q=${encodeURIComponent(query)}`);
   if (!response.ok) {
     throw new Error('Failed to search medications');
   }
