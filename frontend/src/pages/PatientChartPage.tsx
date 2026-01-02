@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, Input, Button } from '../components/ui';
+import { Card, CardContent, Input, Button, Select } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
 import { searchMedications, getPatient } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
+import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
+import {
+  FREQUENCY_OPTIONS,
+  calculateQuantity,
+  parseFrequencyFromDosing,
+  parseDosesPerAdmin,
+  getDefaultDuration,
+  getUnitForForm,
+} from '../utils/quantityCalculator';
 
 interface MedicationResultCardProps {
   medication: MedicationSearchResult;
@@ -46,12 +55,25 @@ function MedicationResultCard({ medication, isSelected, onSelect }: MedicationRe
 interface MedicationDetailsProps {
   medication: SelectedMedication;
   onDosingSelect: (dosing: string) => void;
+  onFrequencyChange: (frequency: string) => void;
+  onDurationChange: (days: number) => void;
   onProceed: () => void;
   onBack: () => void;
 }
 
-function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: MedicationDetailsProps) {
+function MedicationDetails({
+  medication,
+  onDosingSelect,
+  onFrequencyChange,
+  onDurationChange,
+  onProceed,
+  onBack,
+}: MedicationDetailsProps) {
   const hasCommonDosing = medication.commonDosing && medication.commonDosing.length > 0;
+  const frequencyOptions = FREQUENCY_OPTIONS.map((f) => ({ value: f.value, label: f.label }));
+
+  const canProceed =
+    medication.selectedDosing && medication.frequency && medication.durationDays;
 
   return (
     <Card className="mt-normal">
@@ -77,7 +99,7 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
 
         <div className="mb-comfortable">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
-            {hasCommonDosing ? 'Common Dosing' : 'Dosing Instructions'}
+            {hasCommonDosing ? 'Dose' : 'Dosing Instructions'}
           </label>
           {hasCommonDosing ? (
             <div className="flex flex-wrap gap-tight">
@@ -106,6 +128,50 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
           )}
         </div>
 
+        <div className="grid grid-cols-2 gap-normal mb-comfortable">
+          <div>
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
+              Frequency
+            </label>
+            <Select
+              options={frequencyOptions}
+              value={medication.frequency || ''}
+              onChange={onFrequencyChange}
+              placeholder="Select frequency"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
+              Duration
+            </label>
+            <div className="flex items-center gap-tight">
+              <Input
+                type="number"
+                value={medication.durationDays?.toString() || ''}
+                onChange={(e) => onDurationChange(parseInt(e.target.value, 10) || 0)}
+                className="w-24"
+              />
+              <span className="text-[15px] text-text-secondary">days</span>
+            </div>
+          </div>
+        </div>
+
+        {medication.calculatedQuantity !== undefined && medication.calculatedQuantity > 0 && (
+          <div className="mb-comfortable p-normal bg-arctic rounded-md">
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
+              Calculated Quantity
+            </label>
+            <p className="text-xl font-semibold text-deep-ice">
+              {medication.calculatedQuantity} {medication.quantityUnit}
+              {medication.isQuantityEstimate && (
+                <span className="text-[13px] font-normal text-text-secondary ml-2">
+                  (estimated max)
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-normal pt-normal border-t border-frost">
           <Button variant="secondary" onClick={onBack}>
             Cancel
@@ -113,7 +179,7 @@ function MedicationDetails({ medication, onDosingSelect, onProceed, onBack }: Me
           <Button
             variant="primary"
             onClick={onProceed}
-            disabled={!medication.selectedDosing}
+            disabled={!canProceed}
           >
             Add to Prescription
           </Button>
@@ -188,23 +254,85 @@ export function PatientChartPage() {
   }, [debouncedSearch]);
 
   const handleMedicationSelect = (medication: MedicationSearchResult) => {
+    const defaultDuration = getDefaultDuration(medication.name);
+    const form = (medication.form || 'tablet') as MedicationForm;
     setSelectedMedication({
       ...medication,
       selectedDosing: undefined,
+      frequency: undefined,
+      durationDays: defaultDuration,
+      calculatedQuantity: undefined,
+      quantityUnit: getUnitForForm(form),
+      isQuantityEstimate: false,
     });
+  };
+
+  const recalculateQuantity = (
+    med: SelectedMedication,
+    frequency?: string,
+    durationDays?: number
+  ): SelectedMedication => {
+    const freq = frequency ?? med.frequency;
+    const duration = durationDays ?? med.durationDays;
+    const form = (med.form || 'tablet') as MedicationForm;
+
+    if (!freq || !duration || !med.selectedDosing) {
+      return {
+        ...med,
+        frequency: freq,
+        durationDays: duration,
+        calculatedQuantity: undefined,
+      };
+    }
+
+    const dosesPerAdmin = parseDosesPerAdmin(med.selectedDosing, form);
+    const result = calculateQuantity(freq, duration, dosesPerAdmin, form);
+
+    return {
+      ...med,
+      frequency: freq,
+      durationDays: duration,
+      calculatedQuantity: result.quantity,
+      quantityUnit: result.unit,
+      isQuantityEstimate: result.isEstimate,
+    };
   };
 
   const handleDosingSelect = (dosing: string) => {
     if (selectedMedication) {
-      setSelectedMedication({
-        ...selectedMedication,
-        selectedDosing: dosing,
-      });
+      // Try to parse frequency from the dosing string (e.g., "500mg TID" -> "TID")
+      const parsedFrequency = parseFrequencyFromDosing(dosing);
+      const frequency = parsedFrequency || selectedMedication.frequency;
+
+      const updated = recalculateQuantity(
+        { ...selectedMedication, selectedDosing: dosing },
+        frequency,
+        selectedMedication.durationDays
+      );
+      setSelectedMedication(updated);
+    }
+  };
+
+  const handleFrequencyChange = (frequency: string) => {
+    if (selectedMedication) {
+      const updated = recalculateQuantity(selectedMedication, frequency);
+      setSelectedMedication(updated);
+    }
+  };
+
+  const handleDurationChange = (days: number) => {
+    if (selectedMedication) {
+      const updated = recalculateQuantity(selectedMedication, undefined, days);
+      setSelectedMedication(updated);
     }
   };
 
   const handleProceed = () => {
-    if (selectedMedication?.selectedDosing) {
+    if (
+      selectedMedication?.selectedDosing &&
+      selectedMedication.frequency &&
+      selectedMedication.durationDays
+    ) {
       setPrescription([...prescription, selectedMedication]);
       setSelectedMedication(null);
       setSearchQuery('');
@@ -284,14 +412,22 @@ export function PatientChartPage() {
               <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
                 Current Prescription ({prescription.length})
               </h3>
-              <div className="flex flex-wrap gap-tight">
+              <div className="flex flex-col gap-tight">
                 {prescription.map((med, index) => (
-                  <span
+                  <div
                     key={`${med.id}-${index}`}
-                    className="px-3 py-2 bg-arctic text-deep-ice rounded-md text-[15px]"
+                    className="px-4 py-3 bg-arctic text-deep-ice rounded-md"
                   >
-                    {med.name} - {med.selectedDosing}
-                  </span>
+                    <p className="text-[15px] font-medium">{med.name}</p>
+                    <p className="text-[13px] text-text-secondary mt-1">
+                      {med.selectedDosing} × {med.durationDays} days
+                      {med.calculatedQuantity && (
+                        <span className="ml-2">
+                          → {med.calculatedQuantity} {med.quantityUnit}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -359,6 +495,8 @@ export function PatientChartPage() {
           <MedicationDetails
             medication={selectedMedication}
             onDosingSelect={handleDosingSelect}
+            onFrequencyChange={handleFrequencyChange}
+            onDurationChange={handleDurationChange}
             onProceed={handleProceed}
             onBack={handleClearSelection}
           />
