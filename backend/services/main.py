@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Query, Path
 
 from fake_data import FAKE_PATIENTS
 from rxnorm import search_medications as rxnorm_search
+from dosing_data import get_default_duration
 
 
 app = FastAPI(title="Livny Health Services", version="0.1.0")
@@ -63,3 +64,10 @@ async def search_medications(q: str = Query(..., min_length=3)):
     if len(query) < 3:
         raise HTTPException(status_code=400, detail="Query must be at least 3 characters")
     return await rxnorm_search(query)
+
+
+@app.get("/medications/defaults")
+async def get_medication_defaults(name: str = Query(..., description="The medication name")):
+    """Get default prescription values for a medication."""
+    default_duration = get_default_duration(name)
+    return {"defaultDuration": default_duration}

@@ -261,3 +261,56 @@ def get_common_dosing(medication_name: str) -> list[str]:
 
     # Fall back to default dosing
     return dosing_options.get("_default", [])
+
+
+# Medication categories for default duration
+ANTIBIOTICS = {
+    "amoxicillin",
+    "azithromycin",
+    "ciprofloxacin",
+    "doxycycline",
+    "cephalexin",
+    "augmentin",
+    "amoxicillin/clavulanate",
+}
+
+SHORT_TERM_STEROIDS = {
+    "prednisone",
+}
+
+PRN_MEDICATIONS = {
+    "hydrocodone",
+    "oxycodone",
+    "ibuprofen",
+    "acetaminophen",
+    "albuterol",
+    "tramadol",
+}
+
+
+def get_default_duration(medication_name: str) -> int:
+    """
+    Get default duration in days based on medication type/class.
+
+    Antibiotics typically 7-10 days, short-term steroids 5-7 days,
+    PRN medications 30 days, chronic meds 30 days default.
+
+    Args:
+        medication_name: The medication name to check
+
+    Returns:
+        Default duration in days
+    """
+    drug = _find_matching_drug(medication_name)
+
+    if drug in ANTIBIOTICS:
+        return 10
+
+    if drug in SHORT_TERM_STEROIDS:
+        return 7
+
+    if drug in PRN_MEDICATIONS:
+        return 30
+
+    # Chronic medications: 30 days default
+    return 30

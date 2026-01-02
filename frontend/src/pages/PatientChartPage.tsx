@@ -4,7 +4,7 @@ import { Card, CardContent, Input, Button, Select } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications, getPatient } from '../api';
+import { searchMedications, getPatient, getMedicationDefaults } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
@@ -13,7 +13,6 @@ import {
   calculateQuantity,
   parseFrequencyFromDosing,
   parseDosesPerAdmin,
-  getDefaultDuration,
   getUnitForForm,
 } from '../utils/quantityCalculator';
 
@@ -267,18 +266,29 @@ export function PatientChartPage() {
     performSearch();
   }, [debouncedSearch]);
 
-  const handleMedicationSelect = (medication: MedicationSearchResult) => {
-    const defaultDuration = getDefaultDuration(medication.name);
+  const handleMedicationSelect = async (medication: MedicationSearchResult) => {
     const form = (medication.form || 'tablet') as MedicationForm;
+
+    // Set initial state with default duration, then fetch from API
     setSelectedMedication({
       ...medication,
       selectedDosing: undefined,
       frequency: undefined,
-      durationDays: defaultDuration,
+      durationDays: 30, // Default fallback
       calculatedQuantity: undefined,
       quantityUnit: getUnitForForm(form),
       isQuantityEstimate: false,
     });
+
+    // Fetch defaults from API
+    try {
+      const defaults = await getMedicationDefaults(medication.name);
+      setSelectedMedication((prev) =>
+        prev ? { ...prev, durationDays: defaults.defaultDuration } : prev
+      );
+    } catch {
+      // Keep fallback duration on error
+    }
   };
 
   const recalculateQuantity = (
