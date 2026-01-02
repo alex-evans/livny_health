@@ -57,6 +57,7 @@ interface MedicationDetailsProps {
   onDosingSelect: (dosing: string) => void;
   onFrequencyChange: (frequency: string) => void;
   onDurationChange: (days: number) => void;
+  onInstructionsChange: (instructions: string) => void;
   onProceed: () => void;
   onBack: () => void;
 }
@@ -66,6 +67,7 @@ function MedicationDetails({
   onDosingSelect,
   onFrequencyChange,
   onDurationChange,
+  onInstructionsChange,
   onProceed,
   onBack,
 }: MedicationDetailsProps) {
@@ -171,6 +173,18 @@ function MedicationDetails({
             </p>
           </div>
         )}
+
+        <div className="mb-comfortable">
+          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-tight">
+            Additional Instructions <span className="font-normal">(optional)</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="e.g., Take with food, Avoid alcohol"
+            value={medication.instructions || ''}
+            onChange={(e) => onInstructionsChange(e.target.value)}
+          />
+        </div>
 
         <div className="flex justify-end gap-normal pt-normal border-t border-frost">
           <Button variant="secondary" onClick={onBack}>
@@ -327,6 +341,15 @@ export function PatientChartPage() {
     }
   };
 
+  const handleInstructionsChange = (instructions: string) => {
+    if (selectedMedication) {
+      setSelectedMedication({
+        ...selectedMedication,
+        instructions,
+      });
+    }
+  };
+
   const handleProceed = () => {
     if (
       selectedMedication?.selectedDosing &&
@@ -409,26 +432,63 @@ export function PatientChartPage() {
         {prescription.length > 0 && (
           <Card className="mb-comfortable">
             <CardContent>
-              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
+              <h3 className="block text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
                 Current Prescription ({prescription.length})
               </h3>
-              <div className="flex flex-col gap-tight">
-                {prescription.map((med, index) => (
-                  <div
-                    key={`${med.id}-${index}`}
-                    className="px-4 py-3 bg-arctic text-deep-ice rounded-md"
-                  >
-                    <p className="text-[15px] font-medium">{med.name}</p>
-                    <p className="text-[13px] text-text-secondary mt-1">
-                      {med.selectedDosing} × {med.durationDays} days
-                      {med.calculatedQuantity && (
-                        <span className="ml-2">
-                          → {med.calculatedQuantity} {med.quantityUnit}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                ))}
+              <div className="flex flex-col gap-normal">
+                {prescription.map((med, index) => {
+                  const frequencyLabel = FREQUENCY_OPTIONS.find(
+                    (f) => f.value === med.frequency
+                  )?.label;
+                  return (
+                    <div
+                      key={`${med.id}-${index}`}
+                      className="px-4 py-3 bg-arctic rounded-md"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-[15px] font-medium text-deep-ice">
+                            {med.name}
+                          </p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-[15px] text-text-primary">
+                              <span className="text-text-tertiary">Dose:</span>{' '}
+                              {med.selectedDosing}
+                            </p>
+                            <p className="text-[15px] text-text-primary">
+                              <span className="text-text-tertiary">Frequency:</span>{' '}
+                              {frequencyLabel || med.frequency}
+                            </p>
+                            <p className="text-[15px] text-text-primary">
+                              <span className="text-text-tertiary">Duration:</span>{' '}
+                              {med.durationDays} days
+                            </p>
+                            {med.instructions && (
+                              <p className="text-[15px] text-text-primary">
+                                <span className="text-text-tertiary">Instructions:</span>{' '}
+                                {med.instructions}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {med.calculatedQuantity && (
+                          <div className="text-right">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
+                              Quantity
+                            </p>
+                            <p className="text-xl font-semibold text-deep-ice">
+                              {med.calculatedQuantity}
+                            </p>
+                            <p className="text-[13px] text-text-secondary">
+                              {med.quantityUnit}
+                              {med.isQuantityEstimate && ' (est.)'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -497,6 +557,7 @@ export function PatientChartPage() {
             onDosingSelect={handleDosingSelect}
             onFrequencyChange={handleFrequencyChange}
             onDurationChange={handleDurationChange}
+            onInstructionsChange={handleInstructionsChange}
             onProceed={handleProceed}
             onBack={handleClearSelection}
           />
