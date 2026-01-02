@@ -222,20 +222,44 @@ COMMON_DOSING_PATTERNS: dict[str, dict[str, list[str]]] = {
 
 
 def _extract_strength_value(medication_name: str) -> str | None:
-    """Extract the numeric strength value from a medication name."""
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:MG|MCG|MG/ML)?", medication_name, re.IGNORECASE)
+    """Extract the numeric strength value from a medication name.
+
+    Only matches numbers followed by a unit (MG, MCG, etc.) to avoid
+    matching non-strength numbers like "Take 2 tablets".
+
+    For combination drugs like "500/125 MG", extracts the primary strength (500).
+    Handles hyphens (500-MG) and commas (1,000 MG).
+    """
+    # Handle commas in numbers by removing them first
+    name_normalized = medication_name.replace(",", "")
+    match = re.search(r"(\d+(?:\.\d+)?)(?:/\d+)?[\s-]*(?:MG|MCG|MG/ML)\b", name_normalized, re.IGNORECASE)
     if match:
         return match.group(1)
     return None
 
 
 def _find_matching_drug(medication_name: str) -> str | None:
-    """Find a matching drug name in our database."""
+    """Find a matching drug name in our database.
+
+    Returns the first matching drug that appears in the medication name.
+    Among matches at the same position, prefers the longest (most specific).
+    """
     name_lower = medication_name.lower()
+    # Normalize common separators to match our keys
+    name_normalized = name_lower.replace("-", "/")
+
+    matches = []
     for drug in COMMON_DOSING_PATTERNS:
-        if drug in name_lower:
-            return drug
-    return None
+        pos = name_normalized.find(drug)
+        if pos != -1:
+            matches.append((pos, len(drug), drug))
+
+    if not matches:
+        return None
+
+    # Sort by position (earliest first), then by length descending (longest first)
+    matches.sort(key=lambda x: (x[0], -x[1]))
+    return matches[0][2]
 
 
 def get_common_dosing(medication_name: str) -> list[str]:

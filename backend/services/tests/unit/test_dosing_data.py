@@ -142,3 +142,151 @@ class TestFindMatchingDrug:
         """Should find combination drugs"""
         result = _find_matching_drug("Hydrocodone Bitartrate 5 MG / Acetaminophen 325 MG")
         assert result == "hydrocodone"
+
+    def test_finds_partial_name(self):
+        """Should find drug with partial name match"""
+        result = _find_matching_drug("Metformin Extended Release 500 MG")
+        assert result == "metformin"
+
+@pytest.mark.unit
+class TestGetCommonDosingEdgeCases:
+    """Additional edge case tests for get_common_dosing function"""
+
+    def test_strength_with_extra_spaces(self):
+        """Should handle extra spaces in strength extraction"""
+        result = get_common_dosing("Amoxicillin   500    MG   Oral Capsule")
+        assert result == ["500mg TID", "500mg BID"]
+
+    def test_strength_with_no_space(self):
+        """Should handle no space between number and unit"""
+        result = get_common_dosing("Amoxicillin 500MG Oral Capsule")
+        assert result == ["500mg TID", "500mg BID"]
+
+    def test_multiple_strengths_in_name(self):
+        """Should extract correct strength when multiple numbers present"""
+        result = get_common_dosing("Hydrocodone Bitartrate 5 MG / Acetaminophen 325 MG Oral Tablet")
+        assert result == ["1-2 tablets every 4-6 hours PRN"]
+
+    def test_non_standard_strength_format(self):
+        """Should return default dosing when strength is not numeric"""
+        result = get_common_dosing("Amoxicillin Five Hundred MG Oral Capsule")
+        # Falls back to default dosing when drug is known but strength can't be parsed
+        assert result == ["500mg TID", "500mg BID"]
+
+    def test_empty_medication_name(self):
+        """Should return empty list for empty medication name"""
+        result = get_common_dosing("")
+        assert result == []
+
+
+@pytest.mark.unit
+class TestExtractStrengthValueEdgeCases:
+    """Additional edge case tests for _extract_strength_value function"""
+
+    def test_strength_with_leading_zeros(self):
+        """Should extract strength with leading zeros"""
+        result = _extract_strength_value("Amoxicillin 00500 MG Oral Capsule")
+        assert result == "00500"
+
+    def test_strength_with_trailing_text(self):
+        """Should extract strength with trailing text"""
+        result = _extract_strength_value("Amoxicillin 500 MG Extended Release Oral Capsule")
+        assert result == "500"
+
+    def test_strength_with_special_characters(self):
+        """Should extract strength with special characters"""
+        result = _extract_strength_value("Amoxicillin 500-MG Oral Capsule")
+        assert result == "500"
+
+    def test_no_strength_but_number_present(self):
+        """Should return None when number is present but not a strength"""
+        result = _extract_strength_value("Take 2 tablets daily")
+        assert result is None
+
+    def test_strength_with_comma(self):
+        """Should extract strength with comma as thousands separator"""
+        result = _extract_strength_value("Amoxicillin 1,000 MG Oral Capsule")
+        assert result == "1000"  # Comma is stripped, full number extracted
+
+
+@pytest.mark.unit
+class TestFindMatchingDrugEdgeCases:
+    """Additional edge case tests for _find_matching_drug function"""
+
+    def test_drug_name_with_special_characters(self):
+        """Should find drug name with special characters"""
+        result = _find_matching_drug("Amoxicillin-Clavulanate 500/125 MG")
+        assert result == "amoxicillin/clavulanate"
+
+    def test_drug_name_with_extra_spaces(self):
+        """Should find drug name with extra spaces"""
+        result = _find_matching_drug("   Lisinopril    10 MG   ")
+        assert result == "lisinopril"
+
+    def test_drug_name_with_partial_word(self):
+        """Should not match partial words"""
+        result = _find_matching_drug("Lisino")
+        assert result is None
+
+    def test_drug_name_with_numbers_only(self):
+        """Should return None for drug names with only numbers"""
+        result = _find_matching_drug("500 MG")
+        assert result is None
+
+    def test_empty_drug_name(self):
+        """Should return None for empty drug name"""
+        result = _find_matching_drug("")
+        assert result is None
+
+
+@pytest.mark.unit
+class TestGetCommonDosingAdditionalCases:
+    """Additional tests for get_common_dosing function"""
+
+    def test_diphenhydramine_25mg(self):
+        """Should return correct dosing for Diphenhydramine 25mg"""
+        result = get_common_dosing("Diphenhydramine 25 MG Oral Capsule")
+        assert result == ["25-50mg at bedtime PRN"]
+
+    def test_diphenhydramine_50mg(self):
+        """Should return correct dosing for Diphenhydramine 50mg"""
+        result = get_common_dosing("Diphenhydramine 50 MG Oral Capsule")
+        assert result == ["50mg at bedtime PRN"]
+
+
+@pytest.mark.unit
+class TestDefaultDosingPatterns:
+    """Tests for default dosing patterns in COMMON_DOSING_PATTERNS"""
+
+    def test_fluticasone_default(self):
+        """Should return default dosing for Fluticasone"""
+        result = get_common_dosing("Fluticasone 50 MCG Nasal Spray")
+        assert result == ["1-2 sprays each nostril daily"]
+
+    def test_cetirizine_default(self):
+        """Should return default dosing for Cetirizine"""
+        result = get_common_dosing("Cetirizine 10 MG Oral Tablet")
+        assert result == ["10mg daily"]
+
+    def test_loratadine_default(self):
+        """Should return default dosing for Loratadine"""
+        result = get_common_dosing("Loratadine 10 MG Oral Tablet")
+        assert result == ["10mg daily"]
+
+    def test_augmentin_default(self):
+        """Should return default dosing for Augmentin"""
+        result = get_common_dosing("Augmentin 875/125 MG Oral Tablet")
+        assert result == ["875/125mg BID"]
+
+    def test_amoxicillin_clavulanate_default(self):
+        """Should return default dosing for Amoxicillin/Clavulanate"""
+        result = get_common_dosing("Amoxicillin/Clavulanate 875/125 MG Oral Tablet")
+        assert result == ["875/125mg BID"]
+
+    def test_augmentin_500mg(self):
+        """Should return correct dosing for Augmentin 500mg"""
+        result = get_common_dosing("Augmentin 500/125 MG Oral Tablet")
+        assert result == ["500/125mg BID"]
+
+
+
