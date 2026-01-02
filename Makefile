@@ -20,6 +20,6 @@ install:
 
 test:
 	cd backend/services && source .venv/bin/activate && uv sync && pytest
-	deactivate && cd backend/bff && source .venv/bin/activate && uv sync && pytest
-	deactivate && cd frontend && npm test
+	cd backend/bff && source .venv/bin/activate && uv sync && pytest
+	cd frontend && npm test
  

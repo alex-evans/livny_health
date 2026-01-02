@@ -53,3 +53,10 @@ async def search_medications(q: str = Query(..., min_length=3)):
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{SERVICES_URL}/medications/search", params={"q": q})
         return response.json()
+
+
+@app.get("/medications/defaults")
+async def get_medication_defaults(name: str = Query(..., description="The medication name")):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{SERVICES_URL}/medications/defaults", params={"name": name})
+        return response.json()

@@ -48,3 +48,17 @@ export async function searchMedications(query: string): Promise<MedicationSearch
   setCache(query, results);
   return results;
 }
+
+export interface MedicationDefaults {
+  defaultDuration: number;
+}
+
+export async function getMedicationDefaults(medicationName: string): Promise<MedicationDefaults> {
+  const response = await fetch(
+    `${BFF_URL}/medications/defaults?name=${encodeURIComponent(medicationName)}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to get medication defaults');
+  }
+  return response.json();
+}

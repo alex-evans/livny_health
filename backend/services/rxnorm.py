@@ -2,6 +2,8 @@ import re
 
 import httpx
 
+from dosing_data import get_common_dosing
+
 RXNORM_BASE_URL = "https://rxnav.nlm.nih.gov/REST"
 
 FORM_PATTERNS = {
@@ -55,7 +57,7 @@ def _parse_drug_response(data: dict) -> list[dict]:
                 "name": name,
                 "strength": _extract_strength(name),
                 "form": _extract_form(name),
-                "commonDosing": [],
+                "commonDosing": get_common_dosing(name),
                 "isControlled": False,
             })
 

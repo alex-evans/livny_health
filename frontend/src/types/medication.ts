@@ -20,6 +20,14 @@ export interface MedicationSearchResult {
 
 export interface SelectedMedication extends MedicationSearchResult {
   selectedDosing?: string;
+  dosageAmount?: string;
+  frequency?: string;
+  durationDays?: number;
+  calculatedQuantity?: number;
+  quantityUnit?: string;
+  isQuantityEstimate?: boolean;
+  imperialEquivalent?: { value: number; unit: string; formatted: string };
+  instructions?: string;
 }
 
 export interface ActiveMedication {
