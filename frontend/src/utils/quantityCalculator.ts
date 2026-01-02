@@ -3,6 +3,8 @@
  * Calculates total quantity needed based on frequency, duration, and doses per administration.
  */
 
+import { getVolumeInSystem, type ConversionResult } from './unitConversion';
+
 export interface FrequencyOption {
   value: string;
   label: string;
@@ -108,6 +110,7 @@ export interface QuantityResult {
   quantity: number;
   unit: string;
   isEstimate: boolean; // True for PRN medications
+  imperialEquivalent?: ConversionResult; // For liquid medications (mL -> tsp/tbsp/fl oz)
 }
 
 /**
@@ -135,10 +138,14 @@ export function calculateQuantity(
   // Round up to nearest whole number
   const quantity = Math.ceil(rawQuantity);
 
+  // Calculate imperial equivalent for liquid medications (mL -> tsp/tbsp/fl oz)
+  const imperialEquivalent = form === 'liquid' ? getVolumeInSystem(quantity, 'imperial') : undefined;
+
   return {
     quantity,
     unit,
     isEstimate,
+    imperialEquivalent,
   };
 }
 

@@ -26,6 +26,7 @@ export interface SelectedMedication extends MedicationSearchResult {
   calculatedQuantity?: number;
   quantityUnit?: string;
   isQuantityEstimate?: boolean;
+  imperialEquivalent?: { value: number; unit: string; formatted: string };
   instructions?: string;
 }
 

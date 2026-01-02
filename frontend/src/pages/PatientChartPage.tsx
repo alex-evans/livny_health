@@ -164,6 +164,11 @@ function MedicationDetails({
             </label>
             <p className="text-xl font-semibold text-deep-ice">
               {medication.calculatedQuantity} {medication.quantityUnit}
+              {medication.imperialEquivalent && (
+                <span className="text-[15px] font-normal text-text-secondary ml-2">
+                  ({medication.imperialEquivalent.formatted})
+                </span>
+              )}
               {medication.isQuantityEstimate && (
                 <span className="text-[13px] font-normal text-text-secondary ml-2">
                   (estimated max)
@@ -319,6 +324,7 @@ export function PatientChartPage() {
       calculatedQuantity: result.quantity,
       quantityUnit: result.unit,
       isQuantityEstimate: result.isEstimate,
+      imperialEquivalent: result.imperialEquivalent,
     };
   };
 
@@ -491,6 +497,7 @@ export function PatientChartPage() {
                             </p>
                             <p className="text-[13px] text-text-secondary">
                               {med.quantityUnit}
+                              {med.imperialEquivalent && ` (${med.imperialEquivalent.formatted})`}
                               {med.isQuantityEstimate && ' (est.)'}
                             </p>
                           </div>
