@@ -1,6 +1,25 @@
-import type { Patient } from '../types';
+import type { Patient, AllergyCheckResult } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
+
+export async function checkAllergyConflict(
+  patientId: string,
+  medicationName: string
+): Promise<AllergyCheckResult> {
+  const response = await fetch(`${BFF_URL}/patients/${patientId}/check-allergy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ medication_name: medicationName }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check allergy');
+  }
+
+  return response.json();
+}
 
 export async function getPatients(): Promise<Patient[]> {
   const response = await fetch(`${BFF_URL}/patients`);

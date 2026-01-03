@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, Input, Button, Select } from '../components/ui';
+import { Card, CardContent, Input, Button, Select, AllergyBlockModal } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications, getPatient, getMedicationDefaults } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
+import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -219,6 +219,7 @@ export function PatientChartPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMedication, setSelectedMedication] = useState<SelectedMedication | null>(null);
   const [prescription, setPrescription] = useState<SelectedMedication[]>([]);
+  const [allergyAlert, setAllergyAlert] = useState<AllergyAlert | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -272,6 +273,19 @@ export function PatientChartPage() {
   }, [debouncedSearch]);
 
   const handleMedicationSelect = async (medication: MedicationSearchResult) => {
+    if (!patientId) return;
+
+    // Check for allergy conflicts first
+    try {
+      const result = await checkAllergyConflict(patientId, medication.name);
+      if (result.hasConflict && result.alert) {
+        setAllergyAlert(result.alert);
+        return; // Block selection
+      }
+    } catch {
+      // Continue if allergy check fails - don't block the workflow
+    }
+
     const form = (medication.form || 'tablet') as MedicationForm;
 
     // Set initial state with default duration, then fetch from API
@@ -381,6 +395,10 @@ export function PatientChartPage() {
 
   const handleClearSelection = () => {
     setSelectedMedication(null);
+  };
+
+  const handleAllergyAlertClose = () => {
+    setAllergyAlert(null);
   };
 
   const handleBack = () => {
@@ -580,6 +598,13 @@ export function PatientChartPage() {
           />
         )}
       </main>
+
+      {allergyAlert && (
+        <AllergyBlockModal
+          alert={allergyAlert}
+          onClose={handleAllergyAlertClose}
+        />
+      )}
     </div>
   );
 }

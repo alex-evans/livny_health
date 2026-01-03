@@ -18,3 +18,19 @@ export interface Patient {
   allergies?: Allergy[];
   activeMedications?: ActiveMedication[];
 }
+
+export interface AllergyAlert {
+  blocked: boolean;
+  severity: AllergySeverity;
+  title: string;
+  message: string;
+  allergen: string;
+  reaction: string;
+  medicationName: string;
+  isCrossReactive: boolean;
+}
+
+export interface AllergyCheckResult {
+  hasConflict: boolean;
+  alert: AllergyAlert | null;
+}
