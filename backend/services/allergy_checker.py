@@ -60,7 +60,11 @@ class AllergyAlert:
         self.is_cross_reactive = is_cross_reactive
 
     def to_dict(self) -> dict:
-        title = f"CRITICAL: Patient allergic to {self.allergen}"
+        if self.blocked:
+            title = f"CRITICAL: Patient allergic to {self.allergen}"
+        else:
+            title = f"Warning: Patient allergic to {self.allergen}"
+
         if self.is_cross_reactive:
             message = (
                 f"{self.medication_name} is cross-reactive with {self.allergen}. "
@@ -106,11 +110,13 @@ def check_allergy(
         allergen = allergy.get("allergen", "").lower()
         reaction = allergy.get("reaction", "Unknown")
         severity = allergy.get("severity", "unknown")
+        # Only severe allergies require override
+        is_blocked = severity == "severe"
 
         # Direct match check
         if allergen in medication_lower or medication_lower in allergen:
             return AllergyAlert(
-                blocked=True,
+                blocked=is_blocked,
                 allergen=allergy.get("allergen", "Unknown"),
                 reaction=reaction,
                 severity=severity,
@@ -124,7 +130,7 @@ def check_allergy(
             for reactive_med in cross_reactive_meds:
                 if reactive_med in medication_lower:
                     return AllergyAlert(
-                        blocked=True,
+                        blocked=is_blocked,
                         allergen=allergy.get("allergen", "Unknown"),
                         reaction=reaction,
                         severity=severity,

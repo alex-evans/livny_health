@@ -3,3 +3,5 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from './Car
 export { Input } from './Input';
 export { Select } from './Select';
 export { AllergyBlockModal } from './AllergyBlockModal';
+export { AllergyWarningBanner } from './AllergyWarningBanner';
+export type { AllergyOverrideData } from './AllergyBlockModal';

@@ -76,3 +76,14 @@ async def check_patient_allergy(
         if response.status_code == 404:
             raise HTTPException(status_code=404, detail="Patient not found")
         return response.json()
+
+
+@app.post("/allergy-overrides")
+async def log_allergy_override(body: dict = ...):
+    """Proxy to log an allergy override."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/allergy-overrides",
+            json=body,
+        )
+        return response.json()

@@ -2,6 +2,34 @@ import type { Patient, AllergyCheckResult } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
 
+export interface AllergyOverrideLogRequest {
+  patient_id: string;
+  medication_name: string;
+  allergen: string;
+  severity: string;
+  justification: string;
+  acknowledged_at: string;
+  prescribed_at: string;
+}
+
+export async function logAllergyOverride(
+  override: AllergyOverrideLogRequest
+): Promise<{ success: boolean; logId: string }> {
+  const response = await fetch(`${BFF_URL}/allergy-overrides`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(override),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to log allergy override');
+  }
+
+  return response.json();
+}
+
 export async function checkAllergyConflict(
   patientId: string,
   medicationName: string
