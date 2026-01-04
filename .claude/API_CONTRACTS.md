@@ -76,40 +76,46 @@ POST /medications/search
 ]
 ```
 
-### Check Interactions
+### Check Drug Interactions
 ```
-POST /medications/check-interactions
+POST /patients/{patient_id}/check-interactions
 ```
+
+Checks if a medication interacts with the patient's current active medications.
 
 **Request:**
 ```json
 {
-  "patient_id": "12345",
-  "drug_id": "amox-500",
-  "dosage": "500mg",
-  "frequency": "TID",
-  "duration": 10
+  "medication_name": "Amoxicillin"
 }
 ```
 
-**Response:**
+**Response (with interactions):**
 ```json
 {
-  "alerts": [
+  "hasInteractions": true,
+  "interactions": [
     {
-      "id": "alert-1",
-      "severity": "critical",
-      "type": "allergy",
-      "title": "Penicillin Allergy",
-      "message": "Patient has documented penicillin allergy...",
-      "recommendation": "Select alternative antibiotic",
-      "ui_display": "modal"
+      "interactingDrug": "Warfarin",
+      "severity": "moderate",
+      "description": "May increase warfarin effects - monitor INR"
     }
-  ],
-  "can_prescribe": false,
-  "requires_override": true
+  ]
 }
 ```
+
+**Response (no interactions):**
+```json
+{
+  "hasInteractions": false,
+  "interactions": []
+}
+```
+
+**Severity levels:**
+- `major` - Serious interaction, avoid combination or use extreme caution
+- `moderate` - Monitor patient closely
+- `minor` - Minimal clinical significance
 
 ### Prescribe Medication
 ```

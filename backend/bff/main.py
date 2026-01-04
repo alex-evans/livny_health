@@ -87,3 +87,30 @@ async def log_allergy_override(body: dict = ...):
             json=body,
         )
         return response.json()
+
+
+@app.post("/patients/{patient_id}/check-interactions")
+async def check_drug_interactions(
+    patient_id: str = Path(..., description="The patient ID"),
+    body: dict = ...,
+):
+    """Proxy to check if a medication interacts with patient's current medications."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/patients/{patient_id}/check-interactions",
+            json=body,
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return response.json()
+
+
+@app.post("/interaction-overrides")
+async def log_interaction_override(body: dict = ...):
+    """Proxy to log an interaction override."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/interaction-overrides",
+            json=body,
+        )
+        return response.json()

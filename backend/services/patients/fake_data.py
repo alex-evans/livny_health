@@ -29,6 +29,17 @@ FAKE_MEDICATIONS = [
     {"id": "azithromycin-250", "name": "Azithromycin 250mg tablet", "strength": "250mg", "form": "tablet", "commonDosing": ["500mg day 1, then 250mg days 2-5"], "isControlled": False},
     {"id": "ciprofloxacin-500", "name": "Ciprofloxacin 500mg tablet", "strength": "500mg", "form": "tablet", "commonDosing": ["500mg BID"], "isControlled": False},
     {"id": "albuterol-inhaler", "name": "Albuterol 90mcg inhaler", "strength": "90mcg/actuation", "form": "inhaler", "commonDosing": ["2 puffs every 4-6 hours PRN"], "isControlled": False},
+    {"id": "metronidazole-500", "name": "Metronidazole 500mg tablet", "strength": "500mg", "form": "tablet", "commonDosing": ["500mg TID", "500mg BID"], "isControlled": False},
+    {"id": "ibuprofen-400", "name": "Ibuprofen 400mg tablet", "strength": "400mg", "form": "tablet", "commonDosing": ["400mg TID PRN", "400mg every 6 hours PRN"], "isControlled": False},
+    {"id": "ibuprofen-800", "name": "Ibuprofen 800mg tablet", "strength": "800mg", "form": "tablet", "commonDosing": ["800mg TID"], "isControlled": False},
+    {"id": "aspirin-81", "name": "Aspirin 81mg tablet", "strength": "81mg", "form": "tablet", "commonDosing": ["81mg daily"], "isControlled": False},
+    {"id": "aspirin-325", "name": "Aspirin 325mg tablet", "strength": "325mg", "form": "tablet", "commonDosing": ["325mg every 4-6 hours PRN"], "isControlled": False},
+    {"id": "fluconazole-150", "name": "Fluconazole 150mg tablet", "strength": "150mg", "form": "tablet", "commonDosing": ["150mg once", "150mg weekly"], "isControlled": False},
+    {"id": "simvastatin-20", "name": "Simvastatin 20mg tablet", "strength": "20mg", "form": "tablet", "commonDosing": ["20mg daily at bedtime"], "isControlled": False},
+    {"id": "simvastatin-40", "name": "Simvastatin 40mg tablet", "strength": "40mg", "form": "tablet", "commonDosing": ["40mg daily at bedtime"], "isControlled": False},
+    {"id": "erythromycin-250", "name": "Erythromycin 250mg tablet", "strength": "250mg", "form": "tablet", "commonDosing": ["250mg QID", "500mg BID"], "isControlled": False},
+    {"id": "tramadol-50", "name": "Tramadol 50mg tablet", "strength": "50mg", "form": "tablet", "commonDosing": ["50mg every 4-6 hours PRN"], "isControlled": True},
+    {"id": "sertraline-50", "name": "Sertraline 50mg tablet", "strength": "50mg", "form": "tablet", "commonDosing": ["50mg daily", "100mg daily"], "isControlled": False},
 ]
 
 FAKE_PATIENTS = [
@@ -162,6 +173,66 @@ FAKE_PATIENTS = [
         "mrn": "MRN-10005",
         "allergies": [],
         "activeMedications": [],
+    },
+    {
+        "id": "patient-006",
+        "name": "Robert Thompson",
+        "dateOfBirth": "1958-07-12",
+        "mrn": "MRN-10006",
+        "allergies": [],
+        "activeMedications": [
+            {
+                "id": "med-8",
+                "name": "Warfarin",
+                "dosage": "5mg",
+                "frequency": "daily",
+                "started": "2022-08-15",
+            },
+            {
+                "id": "med-9",
+                "name": "Lisinopril",
+                "dosage": "10mg",
+                "frequency": "daily",
+                "started": "2021-03-20",
+            },
+        ],
+    },
+    {
+        "id": "patient-007",
+        "name": "Patricia Martinez",
+        "dateOfBirth": "1965-09-23",
+        "mrn": "MRN-10007",
+        "allergies": [],
+        "activeMedications": [
+            {
+                "id": "med-10",
+                "name": "Warfarin",
+                "dosage": "5mg",
+                "frequency": "daily",
+                "started": "2023-02-10",
+            },
+            {
+                "id": "med-11",
+                "name": "Simvastatin",
+                "dosage": "40mg",
+                "frequency": "at bedtime",
+                "started": "2022-05-15",
+            },
+            {
+                "id": "med-12",
+                "name": "Sertraline",
+                "dosage": "50mg",
+                "frequency": "daily",
+                "started": "2023-08-01",
+            },
+            {
+                "id": "med-13",
+                "name": "Lisinopril",
+                "dosage": "20mg",
+                "frequency": "daily",
+                "started": "2021-11-20",
+            },
+        ],
     },
 ]
 
