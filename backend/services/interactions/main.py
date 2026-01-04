@@ -54,9 +54,25 @@ class DrugInteraction:
         }
 
 
-def check_interactions(
-    medication_name: str, active_medications: list[dict]
-) -> list[DrugInteraction]:
+def _find_interaction(drug1: str, drug2: str) -> dict | None:
+    """
+    Look up an interaction between two drugs in the database.
+    Checks both directions since interactions are bidirectional.
+    """
+    for interaction in DRUG_INTERACTIONS:
+        drugs = [d.lower() for d in interaction["drugs"]]
+
+        # Check if both drugs are involved in this interaction
+        drug1_match = any(drug1 in d or d in drug1 for d in drugs)
+        drug2_match = any(drug2 in d or d in drug2 for d in drugs)
+
+        if drug1_match and drug2_match:
+            return interaction
+
+    return None
+
+
+def check_interactions(medication_name: str, active_medications: list[dict]) -> list[DrugInteraction]:
     """
     Check if a medication interacts with any of the patient's current medications.
 
@@ -87,24 +103,6 @@ def check_interactions(
     return interactions
 
 
-def _find_interaction(drug1: str, drug2: str) -> dict | None:
-    """
-    Look up an interaction between two drugs in the database.
-    Checks both directions since interactions are bidirectional.
-    """
-    for interaction in DRUG_INTERACTIONS:
-        drugs = [d.lower() for d in interaction["drugs"]]
-
-        # Check if both drugs are involved in this interaction
-        drug1_match = any(drug1 in d or d in drug1 for d in drugs)
-        drug2_match = any(drug2 in d or d in drug2 for d in drugs)
-
-        if drug1_match and drug2_match:
-            return interaction
-
-    return None
-
-
 def log_interaction_override(override: InteractionOverrideLog) -> dict:
     """
     Log an interaction override when a physician prescribes despite drug interactions.
@@ -131,3 +129,4 @@ def log_interaction_override(override: InteractionOverrideLog) -> dict:
     print(f"[INTERACTION OVERRIDE] Logged override: {log_entry}")
 
     return log_entry
+
