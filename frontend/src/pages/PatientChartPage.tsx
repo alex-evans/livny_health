@@ -4,7 +4,7 @@ import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWar
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride } from '../api';
+import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert, DrugInteraction } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
@@ -224,6 +224,8 @@ export function PatientChartPage() {
   const [drugInteractions, setDrugInteractions] = useState<DrugInteraction[]>([]);
   const [criticalInteractions, setCriticalInteractions] = useState<DrugInteraction[]>([]);
   const [pendingInteractionMedication, setPendingInteractionMedication] = useState<MedicationSearchResult | null>(null);
+  const [isSubmittingPrescription, setIsSubmittingPrescription] = useState(false);
+  const [prescriptionSuccess, setPrescriptionSuccess] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -589,6 +591,50 @@ export function PatientChartPage() {
     navigate('/patients');
   };
 
+  const handleSubmitPrescription = async () => {
+    if (!patientId || prescription.length === 0) return;
+
+    setIsSubmittingPrescription(true);
+    try {
+      const medications = prescription.map((med) => ({
+        name: med.name,
+        dosage: med.selectedDosing || '',
+        frequency: med.frequency || '',
+        duration_days: med.durationDays || 0,
+        instructions: med.instructions,
+      }));
+
+      const result = await submitPrescription(patientId, medications);
+
+      if (result.success) {
+        // Update patient's active medications locally
+        setPatient((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            activeMedications: [
+              ...(prev.activeMedications || []),
+              ...result.medications,
+            ],
+          };
+        });
+
+        // Clear the prescription and show success
+        setPrescription([]);
+        setPrescriptionSuccess(true);
+
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setPrescriptionSuccess(false);
+        }, 5000);
+      }
+    } catch (error) {
+      console.error('Failed to submit prescription:', error);
+    } finally {
+      setIsSubmittingPrescription(false);
+    }
+  };
+
   if (!currentUser) {
     return null;
   }
@@ -642,6 +688,19 @@ export function PatientChartPage() {
         <h2 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
           Medications
         </h2>
+
+        {prescriptionSuccess && (
+          <div className="mb-comfortable p-normal bg-success/10 border border-success/20 rounded-md">
+            <div className="flex items-center gap-tight">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-[15px] text-success font-medium">
+                Prescription sent to pharmacy successfully
+              </p>
+            </div>
+          </div>
+        )}
 
         {patient.activeMedications && patient.activeMedications.length > 0 && (
           <ActiveMedicationsList medications={patient.activeMedications} />
@@ -708,6 +767,15 @@ export function PatientChartPage() {
                     </div>
                   );
                 })}
+              </div>
+              <div className="flex justify-end pt-normal mt-normal border-t border-frost">
+                <Button
+                  variant="primary"
+                  onClick={handleSubmitPrescription}
+                  disabled={isSubmittingPrescription}
+                >
+                  {isSubmittingPrescription ? 'Sending...' : 'Prescribe'}
+                </Button>
               </div>
             </CardContent>
           </Card>

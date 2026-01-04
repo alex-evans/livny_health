@@ -135,5 +135,68 @@ class TestGetPatientMedications:
         response = client.get("/patients/99999/medications")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+@pytest.mark.unit
+class TestCheckMedicationInteractions:
+    """Tests for POST /patients/{patient_id}/check-interactions endpoint"""
+    
+    def test_check_interactions_returns_200(self, client):
+        """Should return 200 for existing patient"""
+        patients = client.get("/patients").json()
+        payload = {"medication_name": "Aspirin"}
+        response = client.post(f"/patients/{patients[0]['id']}/check-interactions", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+    
+    def test_check_interactions_not_found(self, client):
+        """Should return 404 for non-existent patient"""
+        payload = {"medication_name": "Aspirin"}
+        response = client.post("/patients/99999/check-interactions", json=payload)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
+
+@pytest.mark.unit
+class TestSearchMedications:
+    """Tests for GET /medications/search endpoint"""
+    
+    def test_search_medications_returns_200(self, client):
+        """Should return 200 for valid query"""
+        response = client.get("/medications/search?q=asp")
+        assert response.status_code == status.HTTP_200_OK
+    
+    def test_search_medications_too_short_query(self, client):
+        """Should return 422 for too short query"""
+        response = client.get("/medications/search?q=as")
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+@pytest.mark.unit
+class TestGetMedicationDefaults:
+    """Tests for GET /medications/defaults endpoint"""
+    
+    def test_get_medication_defaults_returns_200(self, client):
+        """Should return 200 for valid medication name"""
+        response = client.get("/medications/defaults?name=Aspirin")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_medication_defaults_missing_name(self, client):
+        """Should return 422 when medication name is missing"""
+        response = client.get("/medications/defaults")
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+@pytest.mark.unit
+class TestCheckPatientAllergy:
+    """Tests for POST /patients/{patient_id}/check-allergy endpoint"""
+    
+    def test_check_allergy_returns_200(self, client):
+        """Should return 200 for existing patient"""
+        patients = client.get("/patients").json()
+        payload = {"medication_name": "Aspirin"}
+        response = client.post(f"/patients/{patients[0]['id']}/check-allergy", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+    
+    def test_check_allergy_not_found(self, client):
+        """Should return 404 for non-existent patient"""
+        payload = {"medication_name": "Aspirin"}
+        response = client.post("/patients/99999/check-allergy", json=payload)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 

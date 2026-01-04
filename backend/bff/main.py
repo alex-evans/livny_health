@@ -114,3 +114,19 @@ async def log_interaction_override(body: dict = ...):
             json=body,
         )
         return response.json()
+
+
+@app.post("/patients/{patient_id}/prescriptions")
+async def create_prescription(
+    patient_id: str = Path(..., description="The patient ID"),
+    body: dict = ...,
+):
+    """Proxy to create a prescription and add medications to patient's list."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/patients/{patient_id}/prescriptions",
+            json=body,
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return response.json()

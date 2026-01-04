@@ -78,8 +78,8 @@ async def check_patient_allergy(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    patient_allergies = allergies.get_patient_allergies(patient) 
-    alert = allergies.check_med_conflicts(request.medication_name, patient_allergies)
+    patient_allergies = allergy_services.get_patient_allergies(patient) 
+    alert = allergy_services.check_med_conflicts(request.medication_name, patient_allergies)
 
     if alert:
         return {"hasConflict": True, "alert": alert.to_dict()}
@@ -125,4 +125,55 @@ async def log_interaction_override(override: interaction_services.InteractionOve
     log_entry = interaction_services.log_interaction_override(override)
 
     return {"success": True, "logId": log_entry["id"]}
+
+
+class PrescribedMedication(BaseModel):
+    name: str
+    dosage: str
+    frequency: str
+    duration_days: int
+    instructions: str | None = None
+
+
+class PrescriptionRequest(BaseModel):
+    medications: list[PrescribedMedication]
+
+
+@app.post("/patients/{patient_id}/prescriptions")
+async def create_prescription(
+    patient_id: str = Path(..., description="The patient ID"),
+    request: PrescriptionRequest = ...,
+):
+    """Create a prescription and add medications to patient's active medication list."""
+    patient = patient_services.find_patient(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    import uuid
+    from datetime import date
+
+    prescription_id = f"rx-{uuid.uuid4().hex[:8]}"
+    today = date.today().isoformat()
+
+    new_medications = []
+    for med in request.medications:
+        new_med = {
+            "id": f"med-{uuid.uuid4().hex[:8]}",
+            "name": med.name,
+            "dosage": med.dosage,
+            "frequency": med.frequency,
+            "started": today,
+            "status": "Pending transmission",
+        }
+        new_medications.append(new_med)
+        # Add to patient's active medications in memory
+        if "activeMedications" not in patient:
+            patient["activeMedications"] = []
+        patient["activeMedications"].append(new_med)
+
+    return {
+        "success": True,
+        "prescriptionId": prescription_id,
+        "medications": new_medications,
+    }
 
