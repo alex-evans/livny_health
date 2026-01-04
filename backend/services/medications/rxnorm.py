@@ -2,41 +2,11 @@ import re
 
 import httpx
 
-from dosing_data import get_common_dosing
+from .dosing_data import get_common_dosing
+from .constants import FORM_PATTERNS
+
 
 RXNORM_BASE_URL = "https://rxnav.nlm.nih.gov/REST"
-
-FORM_PATTERNS = {
-    "Oral Tablet": "tablet",
-    "Oral Capsule": "capsule",
-    "Oral Solution": "liquid",
-    "Oral Suspension": "liquid",
-    "Injectable Solution": "injection",
-    "Injection": "injection",
-    "Topical Cream": "topical",
-    "Topical Ointment": "topical",
-    "Topical Gel": "topical",
-    "Metered Dose Inhaler": "inhaler",
-    "Inhalation Powder": "inhaler",
-}
-
-
-async def search_medications(query: str) -> list[dict]:
-    """
-    Search RxNorm for medications matching the query.
-    Returns medications in frontend-compatible format.
-    """
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{RXNORM_BASE_URL}/drugs.json",
-            params={"name": query},
-            timeout=10.0,
-        )
-        response.raise_for_status()
-        data = response.json()
-
-    return _parse_drug_response(data)
-
 
 def _parse_drug_response(data: dict) -> list[dict]:
     """Parse RxNorm getDrugs response into medication list."""
@@ -77,3 +47,22 @@ def _extract_form(name: str) -> str:
         if pattern.upper() in name_upper:
             return form
     return ""
+
+
+async def search(query: str) -> list[dict]:
+    """
+    Search RxNorm for medications matching the query.
+    Returns medications in frontend-compatible format.
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{RXNORM_BASE_URL}/drugs.json",
+            params={"name": query},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    return _parse_drug_response(data)
+
+

@@ -18,6 +18,13 @@ export interface MedicationSearchResult {
   isControlled: boolean;
 }
 
+export interface AllergyOverride {
+  allergen: string;
+  severity: string;
+  justification: string;
+  acknowledgedAt: string;
+}
+
 export interface SelectedMedication extends MedicationSearchResult {
   selectedDosing?: string;
   dosageAmount?: string;
@@ -28,6 +35,7 @@ export interface SelectedMedication extends MedicationSearchResult {
   isQuantityEstimate?: boolean;
   imperialEquivalent?: { value: number; unit: string; formatted: string };
   instructions?: string;
+  allergyOverride?: AllergyOverride;
 }
 
 export interface ActiveMedication {

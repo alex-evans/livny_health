@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, Input, Button, Select } from '../components/ui';
+import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, type AllergyOverrideData } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications, getPatient, getMedicationDefaults } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, Patient } from '../types';
+import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -219,6 +219,8 @@ export function PatientChartPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMedication, setSelectedMedication] = useState<SelectedMedication | null>(null);
   const [prescription, setPrescription] = useState<SelectedMedication[]>([]);
+  const [allergyAlert, setAllergyAlert] = useState<AllergyAlert | null>(null);
+  const [pendingMedication, setPendingMedication] = useState<MedicationSearchResult | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -271,7 +273,7 @@ export function PatientChartPage() {
     performSearch();
   }, [debouncedSearch]);
 
-  const handleMedicationSelect = async (medication: MedicationSearchResult) => {
+  const proceedWithMedication = async (medication: MedicationSearchResult) => {
     const form = (medication.form || 'tablet') as MedicationForm;
 
     // Set initial state with default duration, then fetch from API
@@ -294,6 +296,28 @@ export function PatientChartPage() {
     } catch {
       // Keep fallback duration on error
     }
+  };
+
+  const handleMedicationSelect = async (medication: MedicationSearchResult) => {
+    if (!patientId) return;
+
+    // Check for allergy conflicts first
+    try {
+      const result = await checkAllergyConflict(patientId, medication.name);
+      if (result.hasConflict && result.alert) {
+        setAllergyAlert(result.alert);
+        // Only block for severe allergies (blocked=true)
+        if (result.alert.blocked) {
+          setPendingMedication(medication);
+          return; // Block selection until override
+        }
+        // For non-blocking (mild/moderate), show warning but continue with selection
+      }
+    } catch {
+      // Continue if allergy check fails - don't block the workflow
+    }
+
+    await proceedWithMedication(medication);
   };
 
   const recalculateQuantity = (
@@ -366,21 +390,100 @@ export function PatientChartPage() {
     }
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (
-      selectedMedication?.selectedDosing &&
-      selectedMedication.frequency &&
-      selectedMedication.durationDays
+      !selectedMedication?.selectedDosing ||
+      !selectedMedication.frequency ||
+      !selectedMedication.durationDays ||
+      !patientId
     ) {
-      setPrescription([...prescription, selectedMedication]);
-      setSelectedMedication(null);
-      setSearchQuery('');
-      setSearchResults([]);
+      return;
     }
+
+    // If there's an allergy override, log it to the backend
+    if (selectedMedication.allergyOverride) {
+      try {
+        await logAllergyOverride({
+          patient_id: patientId,
+          medication_name: selectedMedication.name,
+          allergen: selectedMedication.allergyOverride.allergen,
+          severity: selectedMedication.allergyOverride.severity,
+          justification: selectedMedication.allergyOverride.justification,
+          acknowledged_at: selectedMedication.allergyOverride.acknowledgedAt,
+          prescribed_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('Failed to log allergy override:', error);
+        // Continue with prescription even if logging fails
+      }
+    }
+
+    setPrescription([...prescription, selectedMedication]);
+    setSelectedMedication(null);
+    setAllergyAlert(null);
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const handleClearSelection = () => {
     setSelectedMedication(null);
+  };
+
+  const handleWarningDismiss = () => {
+    // Just hide the warning, keep the medication selected
+    setAllergyAlert(null);
+  };
+
+  const handleSelectAlternative = () => {
+    // Clear warning and selection, go back to search
+    setAllergyAlert(null);
+    setSelectedMedication(null);
+    setPendingMedication(null);
+  };
+
+  const handleAllergyAlertClose = () => {
+    // For blocking modal - clear everything
+    setAllergyAlert(null);
+    setPendingMedication(null);
+  };
+
+  const handleAllergyOverride = async (overrideData: AllergyOverrideData) => {
+    if (!pendingMedication || !allergyAlert) return;
+
+    // Store override data to be logged when prescription is completed
+    const overrideInfo = {
+      allergen: allergyAlert.allergen,
+      severity: allergyAlert.severity,
+      justification: overrideData.justification,
+      acknowledgedAt: overrideData.acknowledgedAt,
+    };
+
+    // Proceed with the medication, attaching the override data
+    const form = (pendingMedication.form || 'tablet') as MedicationForm;
+    setSelectedMedication({
+      ...pendingMedication,
+      selectedDosing: undefined,
+      frequency: undefined,
+      durationDays: 30,
+      calculatedQuantity: undefined,
+      quantityUnit: getUnitForForm(form),
+      isQuantityEstimate: false,
+      allergyOverride: overrideInfo,
+    });
+
+    // Fetch defaults from API
+    try {
+      const defaults = await getMedicationDefaults(pendingMedication.name);
+      setSelectedMedication((prev) =>
+        prev ? { ...prev, durationDays: defaults.defaultDuration } : prev
+      );
+    } catch {
+      // Keep fallback duration on error
+    }
+
+    // Clear the alert and pending state
+    setAllergyAlert(null);
+    setPendingMedication(null);
   };
 
   const handleBack = () => {
@@ -568,6 +671,14 @@ export function PatientChartPage() {
           </div>
         )}
 
+        {allergyAlert && !allergyAlert.blocked && (
+          <AllergyWarningBanner
+            alert={allergyAlert}
+            onDismiss={handleWarningDismiss}
+            onSelectAlternative={handleSelectAlternative}
+          />
+        )}
+
         {selectedMedication && (
           <MedicationDetails
             medication={selectedMedication}
@@ -580,6 +691,14 @@ export function PatientChartPage() {
           />
         )}
       </main>
+
+      {allergyAlert && allergyAlert.blocked && (
+        <AllergyBlockModal
+          alert={allergyAlert}
+          onClose={handleAllergyAlertClose}
+          onOverride={handleAllergyOverride}
+        />
+      )}
     </div>
   );
 }

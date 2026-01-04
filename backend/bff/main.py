@@ -60,3 +60,30 @@ async def get_medication_defaults(name: str = Query(..., description="The medica
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{SERVICES_URL}/medications/defaults", params={"name": name})
         return response.json()
+
+
+@app.post("/patients/{patient_id}/check-allergy")
+async def check_patient_allergy(
+    patient_id: str = Path(..., description="The patient ID"),
+    body: dict = ...,
+):
+    """Proxy to check if a medication conflicts with patient allergies."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/patients/{patient_id}/check-allergy",
+            json=body,
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return response.json()
+
+
+@app.post("/allergy-overrides")
+async def log_allergy_override(body: dict = ...):
+    """Proxy to log an allergy override."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{SERVICES_URL}/allergy-overrides",
+            json=body,
+        )
+        return response.json()

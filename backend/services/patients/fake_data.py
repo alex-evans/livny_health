@@ -1,3 +1,7 @@
+"""
+Will go away when we have a real database.
+"""
+
 
 FAKE_MEDICATIONS = [
     {"id": "amox-250", "name": "Amoxicillin 250mg capsule", "strength": "250mg", "form": "capsule", "commonDosing": ["250mg TID", "250mg BID"], "isControlled": False},
