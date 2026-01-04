@@ -51,4 +51,5 @@ export interface ActiveMedication {
   dosage: string;
   frequency: string;
   started: string;
+  status?: string;
 }

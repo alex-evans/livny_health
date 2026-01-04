@@ -39,9 +39,16 @@ export function ActiveMedicationsList({ medications }: ActiveMedicationsListProp
                   {medication.dosage} {medication.frequency}
                 </span>
               </div>
-              <span className="text-[13px] text-text-tertiary">
-                Started {formatDate(medication.started)}
-              </span>
+              <div className="flex items-center gap-3">
+                {medication.status && (
+                  <span className="text-[13px] px-2 py-0.5 bg-amber-50 text-amber-700 rounded">
+                    {medication.status}
+                  </span>
+                )}
+                <span className="text-[13px] text-text-tertiary">
+                  Started {formatDate(medication.started)}
+                </span>
+              </div>
             </div>
           ))}
         </div>

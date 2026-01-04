@@ -163,6 +163,7 @@ async def create_prescription(
             "dosage": med.dosage,
             "frequency": med.frequency,
             "started": today,
+            "status": "Pending transmission",
         }
         new_medications.append(new_med)
         # Add to patient's active medications in memory
