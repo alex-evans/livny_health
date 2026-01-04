@@ -289,4 +289,26 @@ class TestDefaultDosingPatterns:
         assert result == ["500/125mg BID"]
 
 
+@pytest.mark.unit
+class TestGetDefaultDuration:
+    """Tests for medication_services.dosing_data.get_default_duration function"""
 
+    def test_antibiotic_duration(self):
+        """Should return 10 days for antibiotics"""
+        result = medication_services.dosing_data.get_default_duration("Amoxicillin 500 MG Oral Capsule")
+        assert result == 10
+
+    def test_short_term_steroid_duration(self):
+        """Should return 7 days for short-term steroids"""
+        result = medication_services.dosing_data.get_default_duration("Prednisone 10 MG Oral Tablet")
+        assert result == 7
+
+    def test_prn_medication_duration(self):
+        """Should return 30 days for PRN medications"""
+        result = medication_services.dosing_data.get_default_duration("Albuterol 90 MCG Inhaler")
+        assert result == 30
+
+    def test_chronic_medication_duration(self):
+        """Should return 30 days for chronic medications"""
+        result = medication_services.dosing_data.get_default_duration("Lisinopril 10 MG Oral Tablet")
+        assert result == 30

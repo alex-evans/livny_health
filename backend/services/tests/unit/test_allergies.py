@@ -172,3 +172,31 @@ class TestAllergyChecker:
         assert "amoxicillin" in allergy_services.CROSS_REACTIVITY["penicillin"]
         assert "ampicillin" in allergy_services.CROSS_REACTIVITY["penicillin"]
 
+
+class TestGetPatientAllergies:
+    """Tests for retrieving patient allergies."""
+
+    def test_no_allergies_returns_empty_list(self):
+        """When patient has no allergies, should return empty list."""
+        patient = {"id": "patient-1", "name": "John Doe"}
+        allergies = allergy_services.get_patient_allergies(patient)
+        assert allergies == []
+
+    def test_with_allergies_returns_allergy_list(self):
+        """When patient has allergies, should return the allergy list."""
+        patient = {
+            "id": "patient-2",
+            "name": "Jane Smith",
+            "allergies": [
+                {
+                    "id": "allergy-1",
+                    "allergen": "Penicillin",
+                    "reaction": "Anaphylaxis",
+                    "severity": "severe",
+                    "documented": "2020-01-15",
+                }
+            ],
+        }
+        allergies = allergy_services.get_patient_allergies(patient)
+        assert len(allergies) == 1
+        assert allergies[0]["allergen"] == "Penicillin"
