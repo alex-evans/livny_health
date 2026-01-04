@@ -4,40 +4,24 @@ Allergy checking service with cross-reactivity logic.
 Business logic for checking if a medication conflicts with patient allergies.
 """
 
+from pydantic import BaseModel
 from typing import Optional
 
-# Cross-reactivity mapping: allergen -> list of medication names that could trigger reaction
-CROSS_REACTIVITY = {
-    "penicillin": [
-        "amoxicillin",
-        "ampicillin",
-        "penicillin",
-        "piperacillin",
-        "nafcillin",
-        "oxacillin",
-        "dicloxacillin",
-        "augmentin",
-        "amoxicillin/clavulanate",
-    ],
-    "sulfa": [
-        "sulfamethoxazole",
-        "sulfasalazine",
-        "bactrim",
-        "septra",
-        "trimethoprim/sulfamethoxazole",
-    ],
-    "aspirin": [
-        "aspirin",
-        "acetylsalicylic acid",
-    ],
-    "codeine": [
-        "codeine",
-        "hydrocodone",
-        "oxycodone",
-        "morphine",
-        "tramadol",
-    ],
-}
+from .constants import CROSS_REACTIVITY, ALLERGY_OVERRIDE_LOGS
+
+
+class AllergyCheckRequest(BaseModel):
+    medication_name: str
+
+
+class AllergyOverrideLog(BaseModel):
+    patient_id: str
+    medication_name: str
+    allergen: str
+    severity: str
+    justification: str
+    acknowledged_at: str
+    prescribed_at: str
 
 
 class AllergyAlert:
@@ -88,9 +72,12 @@ class AllergyAlert:
         }
 
 
-def check_allergy(
-    medication_name: str, allergies: list[dict]
-) -> Optional[AllergyAlert]:
+def get_patient_allergies(patient: dict) -> list[dict]:
+    """Retrieve the list of allergies for a patient."""
+    return patient.get("allergies", [])
+
+
+def check_med_conflicts(medication_name: str, allergies: list[dict]) -> Optional[AllergyAlert]:
     """
     Check if a medication conflicts with any patient allergies.
 
@@ -101,9 +88,6 @@ def check_allergy(
     Returns:
         AllergyAlert if there's a conflict, None otherwise
     """
-    if not allergies:
-        return None
-
     medication_lower = medication_name.lower()
 
     for allergy in allergies:
@@ -139,3 +123,24 @@ def check_allergy(
                     )
 
     return None
+
+
+def log_allergy_override(override: AllergyOverrideLog) -> dict:
+    """Log an allergy override when a prescription is completed despite an allergy."""
+    log_entry = {
+        "id": f"override-{len(ALLERGY_OVERRIDE_LOGS) + 1}",
+        "patientId": override.patient_id,
+        "medicationName": override.medication_name,
+        "allergen": override.allergen,
+        "severity": override.severity,
+        "justification": override.justification,
+        "acknowledgedAt": override.acknowledged_at,
+        "prescribedAt": override.prescribed_at,
+    }
+    ALLERGY_OVERRIDE_LOGS.append(log_entry)
+
+    # In production, you would persist this to a database
+    print(f'[ALLERGY OVERRIDE LOGGED] {log_entry}')
+
+    return log_entry
+

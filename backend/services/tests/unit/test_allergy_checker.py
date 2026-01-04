@@ -1,5 +1,10 @@
+"""
+Tests for the allergy checking service.
+"""
+
 import pytest
-from allergy_checker import check_allergy, CROSS_REACTIVITY
+
+from allergies import main as allergy_services
 
 
 class TestAllergyChecker:
@@ -66,12 +71,12 @@ class TestAllergyChecker:
 
     def test_no_allergies_returns_none(self):
         """When patient has no allergies, should return None."""
-        result = check_allergy("Amoxicillin 500mg capsule", [])
+        result = allergy_services.check_med_conflicts("Amoxicillin 500mg capsule", [])
         assert result is None
 
     def test_direct_match_penicillin_severe_is_blocked(self, penicillin_allergy_severe):
         """Direct match for severe penicillin allergy should be blocked."""
-        result = check_allergy("Penicillin VK 500mg tablet", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Penicillin VK 500mg tablet", penicillin_allergy_severe)
         assert result is not None
         assert result.blocked is True
         assert result.allergen == "Penicillin"
@@ -79,7 +84,7 @@ class TestAllergyChecker:
 
     def test_cross_reactive_amoxicillin_with_severe_allergy_is_blocked(self, penicillin_allergy_severe):
         """Amoxicillin with severe penicillin allergy should be blocked."""
-        result = check_allergy("Amoxicillin 500mg capsule", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Amoxicillin 500mg capsule", penicillin_allergy_severe)
         assert result is not None
         assert result.blocked is True
         assert result.allergen == "Penicillin"
@@ -89,24 +94,24 @@ class TestAllergyChecker:
 
     def test_cross_reactive_ampicillin_with_severe_allergy_is_blocked(self, penicillin_allergy_severe):
         """Ampicillin with severe penicillin allergy should be blocked."""
-        result = check_allergy("Ampicillin 250mg capsule", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Ampicillin 250mg capsule", penicillin_allergy_severe)
         assert result is not None
         assert result.blocked is True
         assert result.is_cross_reactive is True
 
     def test_safe_medication_with_penicillin_allergy(self, penicillin_allergy_severe):
         """Non-penicillin medication should not trigger alert."""
-        result = check_allergy("Lisinopril 10mg tablet", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Lisinopril 10mg tablet", penicillin_allergy_severe)
         assert result is None
 
     def test_azithromycin_safe_with_penicillin_allergy(self, penicillin_allergy_severe):
         """Azithromycin (macrolide) should be safe for penicillin allergy."""
-        result = check_allergy("Azithromycin 250mg tablet", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Azithromycin 250mg tablet", penicillin_allergy_severe)
         assert result is None
 
     def test_moderate_allergy_shows_warning_not_blocked(self, sulfa_allergy_moderate):
         """Moderate allergy should trigger warning but NOT be blocked."""
-        result = check_allergy("Bactrim DS tablet", sulfa_allergy_moderate)
+        result = allergy_services.check_med_conflicts("Bactrim DS tablet", sulfa_allergy_moderate)
         assert result is not None
         assert result.blocked is False  # Not blocked for moderate
         assert result.allergen == "Sulfa"
@@ -115,7 +120,7 @@ class TestAllergyChecker:
 
     def test_mild_allergy_shows_warning_not_blocked(self, aspirin_allergy_mild):
         """Mild allergy should trigger warning but NOT be blocked."""
-        result = check_allergy("Aspirin 325mg tablet", aspirin_allergy_mild)
+        result = allergy_services.check_med_conflicts("Aspirin 325mg tablet", aspirin_allergy_mild)
         assert result is not None
         assert result.blocked is False  # Not blocked for mild
         assert result.allergen == "Aspirin"
@@ -123,14 +128,14 @@ class TestAllergyChecker:
 
     def test_multiple_allergies_first_match(self, multiple_allergies):
         """With multiple allergies, should match the first applicable allergy."""
-        result = check_allergy("Amoxicillin 500mg capsule", multiple_allergies)
+        result = allergy_services.check_med_conflicts("Amoxicillin 500mg capsule", multiple_allergies)
         assert result is not None
         assert result.allergen == "Penicillin"
         assert result.blocked is True  # Severe allergy
 
     def test_alert_dict_format_severe_shows_critical(self, penicillin_allergy_severe):
         """Severe allergy alert should show CRITICAL in title."""
-        result = check_allergy("Amoxicillin 500mg capsule", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("Amoxicillin 500mg capsule", penicillin_allergy_severe)
         assert result is not None
 
         alert_dict = result.to_dict()
@@ -144,7 +149,7 @@ class TestAllergyChecker:
 
     def test_alert_dict_format_moderate_shows_warning(self, sulfa_allergy_moderate):
         """Moderate allergy alert should show Warning in title."""
-        result = check_allergy("Bactrim DS tablet", sulfa_allergy_moderate)
+        result = allergy_services.check_med_conflicts("Bactrim DS tablet", sulfa_allergy_moderate)
         assert result is not None
 
         alert_dict = result.to_dict()
@@ -156,13 +161,14 @@ class TestAllergyChecker:
 
     def test_case_insensitive_matching(self, penicillin_allergy_severe):
         """Matching should be case-insensitive."""
-        result = check_allergy("AMOXICILLIN 500MG CAPSULE", penicillin_allergy_severe)
+        result = allergy_services.check_med_conflicts("AMOXICILLIN 500MG CAPSULE", penicillin_allergy_severe)
         assert result is not None
         assert result.blocked is True
 
     def test_cross_reactivity_map_contains_expected_entries(self):
         """Verify cross-reactivity map has expected drug classes."""
-        assert "penicillin" in CROSS_REACTIVITY
-        assert "sulfa" in CROSS_REACTIVITY
-        assert "amoxicillin" in CROSS_REACTIVITY["penicillin"]
-        assert "ampicillin" in CROSS_REACTIVITY["penicillin"]
+        assert "penicillin" in allergy_services.CROSS_REACTIVITY
+        assert "sulfa" in allergy_services.CROSS_REACTIVITY
+        assert "amoxicillin" in allergy_services.CROSS_REACTIVITY["penicillin"]
+        assert "ampicillin" in allergy_services.CROSS_REACTIVITY["penicillin"]
+
