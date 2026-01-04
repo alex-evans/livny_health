@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, type AllergyOverrideData } from '../components/ui';
+import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { AllergyBanner } from '../components/patient';
 import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
-import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert } from '../types';
+import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert, DrugInteraction } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -221,6 +221,9 @@ export function PatientChartPage() {
   const [prescription, setPrescription] = useState<SelectedMedication[]>([]);
   const [allergyAlert, setAllergyAlert] = useState<AllergyAlert | null>(null);
   const [pendingMedication, setPendingMedication] = useState<MedicationSearchResult | null>(null);
+  const [drugInteractions, setDrugInteractions] = useState<DrugInteraction[]>([]);
+  const [criticalInteractions, setCriticalInteractions] = useState<DrugInteraction[]>([]);
+  const [pendingInteractionMedication, setPendingInteractionMedication] = useState<MedicationSearchResult | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -315,6 +318,28 @@ export function PatientChartPage() {
       }
     } catch {
       // Continue if allergy check fails - don't block the workflow
+    }
+
+    // Check for drug interactions with current medications
+    try {
+      const interactionResult = await checkDrugInteractions(patientId, medication.name);
+      if (interactionResult.hasInteractions) {
+        const criticalOnes = interactionResult.interactions.filter(
+          (i) => i.severity === 'major'
+        );
+
+        if (criticalOnes.length > 0) {
+          // Block on critical interactions - require override
+          setCriticalInteractions(interactionResult.interactions);
+          setPendingInteractionMedication(medication);
+          return; // Block selection until override
+        }
+
+        // For non-critical interactions, show warning but continue
+        setDrugInteractions(interactionResult.interactions);
+      }
+    } catch {
+      // Continue if interaction check fails - don't block the workflow
     }
 
     await proceedWithMedication(medication);
@@ -418,15 +443,39 @@ export function PatientChartPage() {
       }
     }
 
+    // If there's an interaction override, log it to the backend
+    if (selectedMedication.interactionOverride) {
+      try {
+        await logInteractionOverride({
+          patient_id: patientId,
+          medication_name: selectedMedication.name,
+          interacting_drugs: selectedMedication.interactionOverride.interactions.map(
+            (i) => i.interactingDrug
+          ),
+          severities: selectedMedication.interactionOverride.interactions.map(
+            (i) => i.severity
+          ),
+          justification: selectedMedication.interactionOverride.justification,
+          acknowledged_at: selectedMedication.interactionOverride.acknowledgedAt,
+          prescribed_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('Failed to log interaction override:', error);
+        // Continue with prescription even if logging fails
+      }
+    }
+
     setPrescription([...prescription, selectedMedication]);
     setSelectedMedication(null);
     setAllergyAlert(null);
+    setDrugInteractions([]);
     setSearchQuery('');
     setSearchResults([]);
   };
 
   const handleClearSelection = () => {
     setSelectedMedication(null);
+    setDrugInteractions([]);
   };
 
   const handleWarningDismiss = () => {
@@ -437,8 +486,14 @@ export function PatientChartPage() {
   const handleSelectAlternative = () => {
     // Clear warning and selection, go back to search
     setAllergyAlert(null);
+    setDrugInteractions([]);
     setSelectedMedication(null);
     setPendingMedication(null);
+  };
+
+  const handleInteractionDismiss = () => {
+    // Just hide the warning, keep the medication selected
+    setDrugInteractions([]);
   };
 
   const handleAllergyAlertClose = () => {
@@ -484,6 +539,50 @@ export function PatientChartPage() {
     // Clear the alert and pending state
     setAllergyAlert(null);
     setPendingMedication(null);
+  };
+
+  const handleCriticalInteractionClose = () => {
+    // For blocking modal - clear everything
+    setCriticalInteractions([]);
+    setPendingInteractionMedication(null);
+  };
+
+  const handleInteractionOverride = async (overrideData: InteractionOverrideData) => {
+    if (!pendingInteractionMedication || criticalInteractions.length === 0 || !patientId) return;
+
+    // Store override data to be logged when prescription is completed
+    const overrideInfo = {
+      interactions: criticalInteractions,
+      justification: overrideData.justification,
+      acknowledgedAt: overrideData.acknowledgedAt,
+    };
+
+    // Proceed with the medication, attaching the override data
+    const form = (pendingInteractionMedication.form || 'tablet') as MedicationForm;
+    setSelectedMedication({
+      ...pendingInteractionMedication,
+      selectedDosing: undefined,
+      frequency: undefined,
+      durationDays: 30,
+      calculatedQuantity: undefined,
+      quantityUnit: getUnitForForm(form),
+      isQuantityEstimate: false,
+      interactionOverride: overrideInfo,
+    });
+
+    // Fetch defaults from API
+    try {
+      const defaults = await getMedicationDefaults(pendingInteractionMedication.name);
+      setSelectedMedication((prev) =>
+        prev ? { ...prev, durationDays: defaults.defaultDuration } : prev
+      );
+    } catch {
+      // Keep fallback duration on error
+    }
+
+    // Clear the alert and pending state
+    setCriticalInteractions([]);
+    setPendingInteractionMedication(null);
   };
 
   const handleBack = () => {
@@ -679,6 +778,14 @@ export function PatientChartPage() {
           />
         )}
 
+        {drugInteractions.length > 0 && (
+          <DrugInteractionWarning
+            interactions={drugInteractions}
+            onDismiss={handleInteractionDismiss}
+            onSelectAlternative={handleSelectAlternative}
+          />
+        )}
+
         {selectedMedication && (
           <MedicationDetails
             medication={selectedMedication}
@@ -697,6 +804,15 @@ export function PatientChartPage() {
           alert={allergyAlert}
           onClose={handleAllergyAlertClose}
           onOverride={handleAllergyOverride}
+        />
+      )}
+
+      {criticalInteractions.length > 0 && pendingInteractionMedication && (
+        <DrugInteractionBlockModal
+          interactions={criticalInteractions}
+          medicationName={pendingInteractionMedication.name}
+          onClose={handleCriticalInteractionClose}
+          onOverride={handleInteractionOverride}
         />
       )}
     </div>

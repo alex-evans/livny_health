@@ -1,4 +1,4 @@
-import type { Patient, AllergyCheckResult } from '../types';
+import type { Patient, AllergyCheckResult, DrugInteractionCheckResult } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
 
@@ -65,5 +65,52 @@ export async function getPatient(patientId: string): Promise<Patient> {
     }
     throw new Error('Failed to fetch patient');
   }
+  return response.json();
+}
+
+export async function checkDrugInteractions(
+  patientId: string,
+  medicationName: string
+): Promise<DrugInteractionCheckResult> {
+  const response = await fetch(`${BFF_URL}/patients/${patientId}/check-interactions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ medication_name: medicationName }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check drug interactions');
+  }
+
+  return response.json();
+}
+
+export interface InteractionOverrideLogRequest {
+  patient_id: string;
+  medication_name: string;
+  interacting_drugs: string[];
+  severities: string[];
+  justification: string;
+  acknowledged_at: string;
+  prescribed_at: string;
+}
+
+export async function logInteractionOverride(
+  override: InteractionOverrideLogRequest
+): Promise<{ success: boolean; logId: string }> {
+  const response = await fetch(`${BFF_URL}/interaction-overrides`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(override),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to log interaction override');
+  }
+
   return response.json();
 }

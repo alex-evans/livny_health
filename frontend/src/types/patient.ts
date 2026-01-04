@@ -34,3 +34,16 @@ export interface AllergyCheckResult {
   hasConflict: boolean;
   alert: AllergyAlert | null;
 }
+
+export type InteractionSeverity = 'minor' | 'moderate' | 'major';
+
+export interface DrugInteraction {
+  interactingDrug: string;
+  severity: InteractionSeverity;
+  description: string;
+}
+
+export interface DrugInteractionCheckResult {
+  hasInteractions: boolean;
+  interactions: DrugInteraction[];
+}

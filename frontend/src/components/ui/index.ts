@@ -4,4 +4,7 @@ export { Input } from './Input';
 export { Select } from './Select';
 export { AllergyBlockModal } from './AllergyBlockModal';
 export { AllergyWarningBanner } from './AllergyWarningBanner';
+export { DrugInteractionWarning } from './DrugInteractionWarning';
+export { DrugInteractionBlockModal } from './DrugInteractionBlockModal';
 export type { AllergyOverrideData } from './AllergyBlockModal';
+export type { InteractionOverrideData } from './DrugInteractionBlockModal';

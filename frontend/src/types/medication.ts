@@ -25,6 +25,12 @@ export interface AllergyOverride {
   acknowledgedAt: string;
 }
 
+export interface InteractionOverride {
+  interactions: { interactingDrug: string; severity: string; description: string }[];
+  justification: string;
+  acknowledgedAt: string;
+}
+
 export interface SelectedMedication extends MedicationSearchResult {
   selectedDosing?: string;
   dosageAmount?: string;
@@ -36,6 +42,7 @@ export interface SelectedMedication extends MedicationSearchResult {
   imperialEquivalent?: { value: number; unit: string; formatted: string };
   instructions?: string;
   allergyOverride?: AllergyOverride;
+  interactionOverride?: InteractionOverride;
 }
 
 export interface ActiveMedication {
