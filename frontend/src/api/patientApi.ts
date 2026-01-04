@@ -114,3 +114,45 @@ export async function logInteractionOverride(
 
   return response.json();
 }
+
+export interface PrescribedMedication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration_days: number;
+  instructions?: string;
+}
+
+export interface PrescriptionResponse {
+  success: boolean;
+  prescriptionId: string;
+  medications: {
+    id: string;
+    name: string;
+    dosage: string;
+    frequency: string;
+    started: string;
+  }[];
+}
+
+export async function submitPrescription(
+  patientId: string,
+  medications: PrescribedMedication[]
+): Promise<PrescriptionResponse> {
+  const response = await fetch(`${BFF_URL}/patients/${patientId}/prescriptions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ medications }),
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Patient not found');
+    }
+    throw new Error('Failed to submit prescription');
+  }
+
+  return response.json();
+}
