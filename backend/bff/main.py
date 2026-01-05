@@ -130,3 +130,19 @@ async def create_prescription(
         if response.status_code == 404:
             raise HTTPException(status_code=404, detail="Patient not found")
         return response.json()
+
+
+@app.get("/schedule")
+async def get_schedule(
+    date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    provider_id: str = Query("provider-001", description="The provider ID"),
+):
+    """Get the daily schedule for a provider."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{SERVICES_URL}/schedule",
+            params={"date": date, "provider_id": provider_id},
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        return response.json()

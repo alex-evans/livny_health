@@ -25,7 +25,7 @@ export function PatientListPage() {
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     } else {
-      navigate('/');
+      navigate('/login');
     }
   }, [navigate]);
 
@@ -51,7 +51,7 @@ export function PatientListPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('currentUser');
-    navigate('/');
+    navigate('/login');
   };
 
   if (!currentUser) {
@@ -66,12 +66,20 @@ export function PatientListPage() {
             <h1 className="text-xl font-semibold text-deep-ice">Patients</h1>
             <p className="text-[13px] text-text-tertiary">{currentUser.name}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-[15px] text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Switch User
-          </button>
+          <div className="flex items-center gap-normal">
+            <button
+              onClick={() => navigate('/schedule')}
+              className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors"
+            >
+              Schedule
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-[15px] text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Switch User
+            </button>
+          </div>
         </div>
       </header>
 

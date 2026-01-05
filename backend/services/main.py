@@ -6,6 +6,7 @@ import allergies.main as allergy_services
 import medications.main as medication_services
 import patients.main as patient_services
 import interactions.main as interaction_services
+import schedule.main as schedule_services
 
 
 app = FastAPI(title="Livny Health Services", version="0.1.0")
@@ -176,4 +177,16 @@ async def create_prescription(
         "prescriptionId": prescription_id,
         "medications": new_medications,
     }
+
+
+@app.get("/schedule")
+async def get_schedule(
+    date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    provider_id: str = Query("provider-001", description="The provider ID"),
+):
+    """Get the daily schedule for a provider."""
+    schedule = schedule_services.get_daily_schedule(date, provider_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return schedule
 
