@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/ui';
 import { getDailySchedule } from '../api';
 import { cn } from '../utils/cn';
@@ -205,11 +205,31 @@ function AppointmentCard({ appointment, isNext, isCurrent, onSelect }: Appointme
 
 export function DailySchedulePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(formatDate(new Date()));
+
+  // Read date from URL params, default to today
+  const dateFromUrl = searchParams.get('date');
+  const [selectedDate, setSelectedDateState] = useState<string>(
+    dateFromUrl && /^\d{4}-\d{2}-\d{2}$/.test(dateFromUrl) ? dateFromUrl : formatDate(new Date())
+  );
+
   const [schedule, setSchedule] = useState<DailySchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync date to URL params
+  const setSelectedDate = useCallback((date: string) => {
+    setSelectedDateState(date);
+    setSearchParams({ date }, { replace: true });
+  }, [setSearchParams]);
+
+  // Sync URL params to state (for browser back/forward)
+  useEffect(() => {
+    if (dateFromUrl && /^\d{4}-\d{2}-\d{2}$/.test(dateFromUrl) && dateFromUrl !== selectedDate) {
+      setSelectedDateState(dateFromUrl);
+    }
+  }, [dateFromUrl, selectedDate]);
 
   useEffect(() => {
     const userJson = sessionStorage.getItem('currentUser');

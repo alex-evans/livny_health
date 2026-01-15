@@ -588,7 +588,7 @@ export function PatientChartPage() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate(-1);
   };
 
   const handleSubmitPrescription = async () => {
