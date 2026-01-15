@@ -1,54 +1,107 @@
+"""
+Fixtures for services tests.
+"""
+import asyncio
 import pytest
 import sys
 from pathlib import Path
 
+# Add parent directories to Python path
+backend_dir = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(backend_dir))
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "unit: marks tests as unit tests")
-    config.addinivalue_line("markers", "integration: marks tests as integration tests")
-
-
-# Add parent directory to Python path
-parent_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(parent_dir))
-
-from fastapi.testclient import TestClient
-
-from main import app
-
-
-@pytest.fixture
-def client():
-    """
-    FastAPI test client for making requests to your endpoints.
-    This is synchronous and perfect for simple API testing.
-    """
-    return TestClient(app)
+from resources import (
+    PatientRepository,
+    PractitionerRepository,
+    AllergyIntoleranceRepository,
+    MedicationRepository,
+    MedicationRequestRepository,
+    EncounterRepository,
+    AppointmentRepository,
+)
+from services import (
+    ClinicalDecisionService,
+    PrescribingService,
+    SchedulingService,
+    MedicationSearchService,
+)
+from services.data_seeder import seed_all
 
 
-@pytest.fixture
-def sample_patient():
-    """Reusable sample patient data for tests"""
+def run_async(coro):
+    """Helper to run async code in sync tests."""
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
+@pytest.fixture(scope="module")
+def repositories():
+    """Create and seed repositories for testing."""
+    patient_repo = PatientRepository()
+    practitioner_repo = PractitionerRepository()
+    allergy_repo = AllergyIntoleranceRepository()
+    medication_repo = MedicationRepository()
+    medication_request_repo = MedicationRequestRepository()
+    encounter_repo = EncounterRepository()
+    appointment_repo = AppointmentRepository()
+
+    # Seed with test data
+    seed_all(
+        patient_repo=patient_repo,
+        practitioner_repo=practitioner_repo,
+        allergy_repo=allergy_repo,
+        medication_request_repo=medication_request_repo,
+        appointment_repo=appointment_repo,
+        encounter_repo=encounter_repo,
+    )
+
     return {
-        "id": 1,
-        "first_name": "John",
-        "last_name": "Doe",
-        "date_of_birth": "1980-05-15",
-        "mrn": "MRN-001234"
+        "patient": patient_repo,
+        "practitioner": practitioner_repo,
+        "allergy": allergy_repo,
+        "medication": medication_repo,
+        "medication_request": medication_request_repo,
+        "encounter": encounter_repo,
+        "appointment": appointment_repo,
     }
 
 
 @pytest.fixture
-def sample_medication():
-    """Reusable sample medication data for tests"""
-    return {
-        "rxcui": "197361",
-        "name": "Simvastatin 20 MG Oral Tablet",
-        "generic_name": "simvastatin"
-    }
+def clinical_decision_service(repositories):
+    """Create a ClinicalDecisionService for testing."""
+    return ClinicalDecisionService(
+        allergy_repo=repositories["allergy"],
+        medication_request_repo=repositories["medication_request"],
+    )
 
 
 @pytest.fixture
-def sample_search_term():
-    """Common medication search term"""
-    return "simvastatin"
+def prescribing_service(repositories, clinical_decision_service):
+    """Create a PrescribingService for testing."""
+    return PrescribingService(
+        patient_repo=repositories["patient"],
+        medication_request_repo=repositories["medication_request"],
+        clinical_decision_service=clinical_decision_service,
+    )
+
+
+@pytest.fixture
+def scheduling_service(repositories):
+    """Create a SchedulingService for testing."""
+    return SchedulingService(
+        patient_repo=repositories["patient"],
+        practitioner_repo=repositories["practitioner"],
+        appointment_repo=repositories["appointment"],
+        encounter_repo=repositories["encounter"],
+    )
+
+
+@pytest.fixture
+def medication_search_service(repositories):
+    """Create a MedicationSearchService for testing."""
+    return MedicationSearchService(
+        medication_repo=repositories["medication"],
+    )

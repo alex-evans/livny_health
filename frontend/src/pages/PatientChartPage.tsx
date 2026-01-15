@@ -234,7 +234,7 @@ export function PatientChartPage() {
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     } else {
-      navigate('/');
+      navigate('/login');
     }
   }, [navigate]);
 
@@ -588,7 +588,7 @@ export function PatientChartPage() {
   };
 
   const handleBack = () => {
-    navigate('/patients');
+    navigate('/');
   };
 
   const handleSubmitPrescription = async () => {
@@ -652,8 +652,8 @@ export function PatientChartPage() {
       <div className="min-h-screen bg-snow flex items-center justify-center">
         <div className="text-center">
           <p className="text-[15px] text-critical mb-normal">{patientError || 'Patient not found'}</p>
-          <Button variant="secondary" onClick={() => navigate('/patients')}>
-            Back to Patients
+          <Button variant="secondary" onClick={() => navigate('/')}>
+            Back to Schedule
           </Button>
         </div>
       </div>
@@ -665,21 +665,29 @@ export function PatientChartPage() {
       <AllergyBanner allergies={patient.allergies ?? []} />
       <header className="bg-white shadow-card">
         <div className="max-w-5xl mx-auto px-generous py-normal">
-          <div className="flex items-center gap-normal mb-tight">
-            <button
-              onClick={handleBack}
-              className="text-text-tertiary hover:text-text-primary transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
-              <p className="text-[13px] text-text-tertiary">
-                DOB: {patient.dateOfBirth} | {patient.mrn}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-normal">
+              <button
+                onClick={handleBack}
+                className="text-text-tertiary hover:text-text-primary transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
+                <p className="text-[13px] text-text-tertiary">
+                  DOB: {patient.dateOfBirth} | {patient.mrn}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => navigate('/schedule')}
+              className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors"
+            >
+              Schedule
+            </button>
           </div>
         </div>
       </header>

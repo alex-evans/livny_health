@@ -1,25 +1,23 @@
-.PHONY: dev frontend services bff install
+.PHONY: dev frontend backend install
 
 dev:
 	@echo "Starting all services..."
-	@make -j3 frontend services bff
+	@make -j3 frontend backend
 
 frontend:
 	cd frontend && npm run dev
 
-services:
-	cd backend/services && uv run uvicorn main:app --reload --port 8001
-
-bff:
-	cd backend/bff && uv run uvicorn main:app --reload --port 8000
+backend:
+	cd backend \
+	&& source .venv/bin/activate \
+	&& uv sync \
+	&& uv run uvicorn main:app --reload --port 8000
 
 install:
 	cd frontend && npm install
-	cd backend/services && uv sync
-	cd backend/bff && uv sync
+	cd backend && uv sync
 
 test:
-	cd backend/services && source .venv/bin/activate && uv sync && pytest
-	cd backend/bff && source .venv/bin/activate && uv sync && pytest
+	cd backends && source .venv/bin/activate && uv sync && pytest
 	cd frontend && npm test
  
