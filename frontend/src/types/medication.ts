@@ -48,8 +48,13 @@ export interface SelectedMedication extends MedicationSearchResult {
 export interface ActiveMedication {
   id: string;
   name: string;
-  dosage: string;
-  frequency: string;
+  brandName?: string | null;
+  strength?: string | null;
+  form?: string | null;
+  dosage: string | null;
+  frequency: string | null;
+  route?: string | null;
   started: string;
+  prescriber?: string | null;
   status?: string;
 }

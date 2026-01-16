@@ -250,6 +250,7 @@ export function PatientChartPage() {
   const [pendingInteractionMedication, setPendingInteractionMedication] = useState<MedicationSearchResult | null>(null);
   const [isSubmittingPrescription, setIsSubmittingPrescription] = useState(false);
   const [prescriptionSuccess, setPrescriptionSuccess] = useState(false);
+  const [showAllMedications, setShowAllMedications] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -763,15 +764,44 @@ export function PatientChartPage() {
                 Active Medications
               </h3>
               {patient.activeMedications && patient.activeMedications.length > 0 ? (
-                <ul className="space-y-2">
-                  {patient.activeMedications.map((med) => (
-                    <li key={med.id} className="text-[15px] text-text-primary">
-                      <span className="text-text-tertiary mr-1">•</span>
-                      {med.name} {med.dosage}
-                      <span className="block text-text-secondary ml-3">{med.frequency}</span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="space-y-3">
+                    {patient.activeMedications
+                      .slice(0, showAllMedications ? undefined : 5)
+                      .map((med) => (
+                        <li
+                          key={med.id}
+                          className="text-[15px] text-text-primary"
+                          title={med.prescriber ? `Prescribed by ${med.prescriber}` : undefined}
+                        >
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-text-tertiary">•</span>
+                            <div>
+                              <span className="font-medium">{med.name}</span>
+                              {med.brandName && <span className="text-text-secondary"> ({med.brandName})</span>}
+                              {med.strength && <span className="text-text-secondary"> {med.strength}</span>}
+                              {med.form && <span className="text-text-tertiary text-[13px]"> {med.form}</span>}
+                            </div>
+                          </div>
+                          <div className="ml-3 text-[13px] text-text-secondary">
+                            {med.frequency}
+                            {med.route && <span> · {med.route}</span>}
+                            {med.started && <span> · {med.started}</span>}
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                  {patient.activeMedications.length > 5 && (
+                    <button
+                      onClick={() => setShowAllMedications(!showAllMedications)}
+                      className="mt-normal text-[13px] text-glacier-blue hover:text-deep-ice transition-colors"
+                    >
+                      {showAllMedications
+                        ? 'Show Less'
+                        : `View All (${patient.activeMedications.length})`}
+                    </button>
+                  )}
+                </>
               ) : (
                 <p className="text-[15px] text-text-secondary">No active medications</p>
               )}

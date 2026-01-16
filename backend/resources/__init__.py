@@ -18,6 +18,7 @@ from .medication_request import (
     MedicationRequest,
     MedicationRequestStatus,
     MedicationRequestIntent,
+    MedicationForm,
     Dosage,
     MedicationRequestRepository,
 )
@@ -59,6 +60,7 @@ __all__ = [
     "MedicationRequest",
     "MedicationRequestStatus",
     "MedicationRequestIntent",
+    "MedicationForm",
     "Dosage",
     "MedicationRequestRepository",
     # Encounter
