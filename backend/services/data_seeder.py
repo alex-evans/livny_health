@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta
 from resources import (
     Patient,
     PatientRepository,
+    Problem,
+    RecentVitals,
     Practitioner,
     PractitionerRepository,
     AllergyIntolerance,
@@ -43,6 +45,17 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1985, 3, 15),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10001")],
+            problem_list=[
+                Problem(name="Hypertension", diagnosed_year=2020),
+                Problem(name="Type 2 Diabetes", diagnosed_year=2021),
+                Problem(name="Hyperlipidemia", diagnosed_year=2022),
+            ],
+            recent_vitals=RecentVitals(
+                date="01/10/2025",
+                blood_pressure="138/82",
+                weight="156 lbs",
+                temperature="98.4°F",
+            ),
         ),
         Patient(
             id="patient-002",
@@ -50,6 +63,16 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1972, 8, 22),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10002")],
+            problem_list=[
+                Problem(name="GERD", diagnosed_year=2019),
+                Problem(name="Anxiety", diagnosed_year=2020),
+            ],
+            recent_vitals=RecentVitals(
+                date="01/08/2025",
+                blood_pressure="124/78",
+                weight="185 lbs",
+                temperature="98.6°F",
+            ),
         ),
         Patient(
             id="patient-003",
@@ -57,6 +80,15 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1990, 11, 8),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10003")],
+            problem_list=[
+                Problem(name="Asthma", diagnosed_year=2015),
+            ],
+            recent_vitals=RecentVitals(
+                date="12/20/2024",
+                blood_pressure="118/72",
+                weight="142 lbs",
+                temperature="98.2°F",
+            ),
         ),
         Patient(
             id="patient-004",
@@ -64,6 +96,17 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1968, 5, 30),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10004")],
+            problem_list=[
+                Problem(name="Hypertension", diagnosed_year=2010),
+                Problem(name="Chronic Pain Syndrome", diagnosed_year=2018),
+                Problem(name="Peripheral Neuropathy", diagnosed_year=2019),
+            ],
+            recent_vitals=RecentVitals(
+                date="01/12/2025",
+                blood_pressure="142/88",
+                weight="210 lbs",
+                temperature="98.6°F",
+            ),
         ),
         Patient(
             id="patient-005",
@@ -71,6 +114,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1995, 1, 17),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10005")],
+            problem_list=[],
+            recent_vitals=None,
         ),
         Patient(
             id="patient-006",
@@ -78,6 +123,17 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1958, 7, 12),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10006")],
+            problem_list=[
+                Problem(name="Atrial Fibrillation", diagnosed_year=2018),
+                Problem(name="Hypertension", diagnosed_year=2012),
+                Problem(name="Heart Failure", diagnosed_year=2020),
+            ],
+            recent_vitals=RecentVitals(
+                date="01/14/2025",
+                blood_pressure="128/76",
+                weight="178 lbs",
+                temperature="98.8°F",
+            ),
         ),
         Patient(
             id="patient-007",
@@ -85,6 +141,18 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1965, 9, 23),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10007")],
+            problem_list=[
+                Problem(name="Atrial Fibrillation", diagnosed_year=2019),
+                Problem(name="Hypertension", diagnosed_year=2015),
+                Problem(name="Depression", diagnosed_year=2020),
+                Problem(name="Hyperlipidemia", diagnosed_year=2017),
+            ],
+            recent_vitals=RecentVitals(
+                date="01/05/2025",
+                blood_pressure="132/80",
+                weight="165 lbs",
+                temperature="98.4°F",
+            ),
         ),
     ]
     repo._seed(patients)

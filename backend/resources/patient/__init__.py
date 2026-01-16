@@ -2,7 +2,7 @@
 Patient resource package.
 """
 
-from .model import Patient
+from .model import Patient, Problem, RecentVitals
 from .repository import PatientRepository
 
-__all__ = ["Patient", "PatientRepository"]
+__all__ = ["Patient", "PatientRepository", "Problem", "RecentVitals"]

@@ -10,13 +10,35 @@ export interface Allergy {
   documented: string;
 }
 
+export interface NextAppointment {
+  date: string;
+  time: string;
+  reason: string;
+}
+
+export interface Problem {
+  name: string;
+  diagnosedYear: number;
+}
+
+export interface RecentVitals {
+  date: string;
+  bloodPressure: string;
+  weight: string;
+  temperature: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
   dateOfBirth: string;
+  gender: string;
   mrn: string;
   allergies?: Allergy[];
   activeMedications?: ActiveMedication[];
+  nextAppointment?: NextAppointment;
+  problemList?: Problem[];
+  recentVitals?: RecentVitals;
 }
 
 export interface AllergyAlert {
