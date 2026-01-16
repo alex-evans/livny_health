@@ -28,12 +28,19 @@ export interface RecentVitals {
   temperature: string;
 }
 
+export interface Insurance {
+  provider: string;
+  memberId: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
   dateOfBirth: string;
   gender: string;
   mrn: string;
+  phone?: string;
+  insurance?: Insurance;
   allergies?: Allergy[];
   activeMedications?: ActiveMedication[];
   nextAppointment?: NextAppointment;

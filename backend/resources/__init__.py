@@ -4,7 +4,7 @@ FHIR-aligned resources package.
 This package contains all resource models and repositories for the EHR system.
 """
 
-from .patient import Patient, PatientRepository, Problem, RecentVitals
+from .patient import Patient, PatientRepository, Problem, RecentVitals, Insurance
 from .practitioner import Practitioner, PractitionerRepository
 from .allergy_intolerance import (
     AllergyIntolerance,
@@ -42,6 +42,7 @@ __all__ = [
     "PatientRepository",
     "Problem",
     "RecentVitals",
+    "Insurance",
     # Practitioner
     "Practitioner",
     "PractitionerRepository",

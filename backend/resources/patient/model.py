@@ -28,6 +28,13 @@ class Problem:
 
 
 @dataclass
+class Insurance:
+    """Insurance coverage information."""
+    provider: str
+    member_id: str
+
+
+@dataclass
 class RecentVitals:
     """Recent vital signs for the patient."""
     date: str
@@ -63,6 +70,7 @@ class Patient(DomainResource):
     # Clinical data (simplified for BFF)
     problem_list: list[Problem] = field(default_factory=list)
     recent_vitals: RecentVitals | None = None
+    insurance: Insurance | None = None
 
     @property
     def mrn(self) -> str | None:
@@ -70,6 +78,14 @@ class Patient(DomainResource):
         for identifier in self.identifiers:
             if "mrn" in identifier.system.lower():
                 return identifier.value
+        return None
+
+    @property
+    def phone(self) -> str | None:
+        """Get the patient's primary phone number if available."""
+        for contact in self.telecom:
+            if contact.system == "phone":
+                return contact.value
         return None
 
     @property
@@ -98,6 +114,15 @@ class Patient(DomainResource):
             "gender": self.gender.value.capitalize(),
             "mrn": self.mrn,
         }
+
+        if self.phone:
+            result["phone"] = self.phone
+
+        if self.insurance:
+            result["insurance"] = {
+                "provider": self.insurance.provider,
+                "memberId": self.insurance.member_id,
+            }
 
         if self.problem_list:
             result["problemList"] = [

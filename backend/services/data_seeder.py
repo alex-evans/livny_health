@@ -11,6 +11,7 @@ from resources import (
     PatientRepository,
     Problem,
     RecentVitals,
+    Insurance,
     Practitioner,
     PractitionerRepository,
     AllergyIntolerance,
@@ -33,6 +34,7 @@ from resources.core import (
     Identifier,
     Reference,
     CodeableConcept,
+    ContactPoint,
 )
 
 
@@ -45,6 +47,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1985, 3, 15),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10001")],
+            telecom=[ContactPoint(system="phone", value="(555) 234-5678", use="mobile")],
+            insurance=Insurance(provider="Blue Cross Blue Shield", member_id="BCBS-12345678"),
             problem_list=[
                 Problem(name="Hypertension", diagnosed_year=2020),
                 Problem(name="Type 2 Diabetes", diagnosed_year=2021),
@@ -63,6 +67,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1972, 8, 22),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10002")],
+            telecom=[ContactPoint(system="phone", value="(555) 345-6789", use="home")],
+            insurance=Insurance(provider="Aetna", member_id="AET-98765432"),
             problem_list=[
                 Problem(name="GERD", diagnosed_year=2019),
                 Problem(name="Anxiety", diagnosed_year=2020),
@@ -80,6 +86,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1990, 11, 8),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10003")],
+            telecom=[ContactPoint(system="phone", value="(555) 456-7890", use="mobile")],
+            insurance=Insurance(provider="UnitedHealthcare", member_id="UHC-11223344"),
             problem_list=[
                 Problem(name="Asthma", diagnosed_year=2015),
             ],
@@ -96,6 +104,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1968, 5, 30),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10004")],
+            telecom=[ContactPoint(system="phone", value="(555) 567-8901", use="home")],
+            insurance=Insurance(provider="Cigna", member_id="CIG-55667788"),
             problem_list=[
                 Problem(name="Hypertension", diagnosed_year=2010),
                 Problem(name="Chronic Pain Syndrome", diagnosed_year=2018),
@@ -114,6 +124,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1995, 1, 17),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10005")],
+            telecom=[ContactPoint(system="phone", value="(555) 678-9012", use="mobile")],
+            insurance=Insurance(provider="Kaiser Permanente", member_id="KP-44556677"),
             problem_list=[],
             recent_vitals=None,
         ),
@@ -123,6 +135,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1958, 7, 12),
             gender=Gender.MALE,
             identifiers=[Identifier.mrn("MRN-10006")],
+            telecom=[ContactPoint(system="phone", value="(555) 789-0123", use="home")],
+            insurance=Insurance(provider="Medicare", member_id="MED-99887766"),
             problem_list=[
                 Problem(name="Atrial Fibrillation", diagnosed_year=2018),
                 Problem(name="Hypertension", diagnosed_year=2012),
@@ -141,6 +155,8 @@ def seed_patients(repo: PatientRepository) -> None:
             birth_date=date(1965, 9, 23),
             gender=Gender.FEMALE,
             identifiers=[Identifier.mrn("MRN-10007")],
+            telecom=[ContactPoint(system="phone", value="(555) 890-1234", use="mobile")],
+            insurance=Insurance(provider="Humana", member_id="HUM-33445566"),
             problem_list=[
                 Problem(name="Atrial Fibrillation", diagnosed_year=2019),
                 Problem(name="Hypertension", diagnosed_year=2015),
