@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
-import { AllergyBanner } from '../components/patient';
-import { ActiveMedicationsList } from '../components/medication';
 import { useDebounce } from '../hooks';
 import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert, DrugInteraction } from '../types';
@@ -205,6 +203,32 @@ function MedicationDetails({
       </CardContent>
     </Card>
   );
+}
+
+function calculateAge(dateOfBirth: string): number {
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  let years = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    years--;
+  }
+  return Math.max(0, years);
+}
+
+function formatDOB(dateOfBirth: string): string {
+  const dob = new Date(dateOfBirth);
+  const month = String(dob.getMonth() + 1).padStart(2, '0');
+  const day = String(dob.getDate()).padStart(2, '0');
+  const year = dob.getFullYear();
+  return `${month}/${day}/${year}`;
+}
+
+function getGenderAbbrev(gender: string): string {
+  const g = gender.toLowerCase();
+  if (g === 'male' || g === 'm') return 'M';
+  if (g === 'female' || g === 'f') return 'F';
+  return gender.charAt(0).toUpperCase();
 }
 
 export function PatientChartPage() {
@@ -588,7 +612,7 @@ export function PatientChartPage() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate(-1);
   };
 
   const handleSubmitPrescription = async () => {
@@ -660,39 +684,119 @@ export function PatientChartPage() {
     );
   }
 
+  const hasAllergies = patient.allergies && patient.allergies.length > 0;
+
   return (
     <div className="min-h-screen bg-snow">
-      <AllergyBanner allergies={patient.allergies ?? []} />
-      <header className="bg-white shadow-card">
-        <div className="max-w-5xl mx-auto px-generous py-normal">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-normal">
-              <button
-                onClick={handleBack}
-                className="text-text-tertiary hover:text-text-primary transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
-                <p className="text-[13px] text-text-tertiary">
-                  DOB: {patient.dateOfBirth} | {patient.mrn}
-                </p>
+      <div className="max-w-5xl mx-auto px-generous py-generous">
+        {/* Patient Info Card */}
+        <Card className="mb-normal">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-normal">
+                <button
+                  onClick={handleBack}
+                  className="text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div>
+                  <div className="flex items-center gap-tight">
+                    <h1 className="text-xl font-semibold text-deep-ice">
+                      {patient.name}, {calculateAge(patient.dateOfBirth)}{getGenderAbbrev(patient.gender)}
+                    </h1>
+                    <span className="text-[15px] text-text-secondary">MRN: {patient.mrn}</span>
+                  </div>
+                  <p className="text-[15px] text-text-secondary mt-1">
+                    DOB: {formatDOB(patient.dateOfBirth)}
+                    {patient.nextAppointment && (
+                      <> | Next: {patient.nextAppointment.date} {patient.nextAppointment.time} - {patient.nextAppointment.reason}</>
+                    )}
+                  </p>
+                  {hasAllergies && (
+                    <div className="flex items-center gap-tight mt-2">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-critical"></span>
+                      <span className="text-[15px] font-medium text-critical">
+                        ALLERGIES: {patient.allergies!.map(a => `${a.allergen} (${a.reaction})`).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={() => navigate('/schedule')}
+                className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors"
+              >
+                Schedule
+              </button>
             </div>
-            <button
-              onClick={() => navigate('/schedule')}
-              className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors"
-            >
-              Schedule
-            </button>
-          </div>
-        </div>
-      </header>
+          </CardContent>
+        </Card>
 
-      <main className="max-w-5xl mx-auto px-generous py-generous">
+        {/* Active Medications & Problem List - Side by Side */}
+        <div className="grid grid-cols-2 gap-normal mb-normal">
+          {/* Active Medications */}
+          <Card>
+            <CardContent>
+              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
+                Active Medications
+              </h3>
+              {patient.activeMedications && patient.activeMedications.length > 0 ? (
+                <ul className="space-y-2">
+                  {patient.activeMedications.map((med) => (
+                    <li key={med.id} className="text-[15px] text-text-primary">
+                      <span className="text-text-tertiary mr-1">•</span>
+                      {med.name} {med.dosage}
+                      <span className="block text-text-secondary ml-3">{med.frequency}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[15px] text-text-secondary">No active medications</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Problem List */}
+          <Card>
+            <CardContent>
+              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
+                Problem List
+              </h3>
+              {patient.problemList && patient.problemList.length > 0 ? (
+                <ul className="space-y-2">
+                  {patient.problemList.map((problem, index) => (
+                    <li key={index} className="text-[15px] text-text-primary">
+                      <span className="text-text-tertiary mr-1">•</span>
+                      {problem.name} ({problem.diagnosedYear})
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[15px] text-text-secondary">No problems documented</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Vitals */}
+        {patient.recentVitals && (
+          <Card className="mb-normal">
+            <CardContent>
+              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
+                Recent Vitals ({patient.recentVitals.date})
+              </h3>
+              <p className="text-[15px] text-text-primary">
+                BP: {patient.recentVitals.bloodPressure} | Weight: {patient.recentVitals.weight} | Temp: {patient.recentVitals.temperature}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Medications Section */}
+        <div>
         <h2 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
           Medications
         </h2>
@@ -708,10 +812,6 @@ export function PatientChartPage() {
               </p>
             </div>
           </div>
-        )}
-
-        {patient.activeMedications && patient.activeMedications.length > 0 && (
-          <ActiveMedicationsList medications={patient.activeMedications} />
         )}
 
         {prescription.length > 0 && (
@@ -873,7 +973,8 @@ export function PatientChartPage() {
             onBack={handleClearSelection}
           />
         )}
-      </main>
+        </div>
+      </div>
 
       {allergyAlert && allergyAlert.blocked && (
         <AllergyBlockModal

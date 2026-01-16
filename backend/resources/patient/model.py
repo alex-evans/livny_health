@@ -21,6 +21,22 @@ from resources.core import (
 
 
 @dataclass
+class Problem:
+    """A clinical problem/condition for the patient."""
+    name: str
+    diagnosed_year: int
+
+
+@dataclass
+class RecentVitals:
+    """Recent vital signs for the patient."""
+    date: str
+    blood_pressure: str
+    weight: str
+    temperature: str
+
+
+@dataclass
 class Patient(DomainResource):
     """
     A person receiving healthcare services.
@@ -43,6 +59,10 @@ class Patient(DomainResource):
 
     # Status
     active: bool = True
+
+    # Clinical data (simplified for BFF)
+    problem_list: list[Problem] = field(default_factory=list)
+    recent_vitals: RecentVitals | None = None
 
     @property
     def mrn(self) -> str | None:
@@ -71,13 +91,29 @@ class Patient(DomainResource):
 
     def to_bff_dict(self) -> dict:
         """Convert to BFF-friendly format (matches current frontend expectations)."""
-        return {
+        result = {
             "id": self.id,
             "name": self.display_name,
             "dateOfBirth": self.birth_date.isoformat() if self.birth_date else None,
             "gender": self.gender.value.capitalize(),
             "mrn": self.mrn,
         }
+
+        if self.problem_list:
+            result["problemList"] = [
+                {"name": p.name, "diagnosedYear": p.diagnosed_year}
+                for p in self.problem_list
+            ]
+
+        if self.recent_vitals:
+            result["recentVitals"] = {
+                "date": self.recent_vitals.date,
+                "bloodPressure": self.recent_vitals.blood_pressure,
+                "weight": self.recent_vitals.weight,
+                "temperature": self.recent_vitals.temperature,
+            }
+
+        return result
 
     @classmethod
     def from_dict(cls, data: dict) -> "Patient":
