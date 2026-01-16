@@ -135,3 +135,63 @@ class TestGetPatientById:
         assert patient["id"] == "patient-001"
         assert "Johnson" in patient["name"]
 
+    def test_get_patient_includes_phone(self, client, mock_services):
+        """Should return patient phone number"""
+        response = client.get("/patients/patient-001")
+        patient = response.json()
+
+        assert "phone" in patient
+        assert isinstance(patient["phone"], str)
+        assert len(patient["phone"]) > 0
+
+    def test_get_patient_phone_format(self, client, mock_services):
+        """Phone number should be in expected format"""
+        response = client.get("/patients/patient-001")
+        patient = response.json()
+
+        # Phone should contain digits and formatting characters
+        assert "(" in patient["phone"]
+        assert ")" in patient["phone"]
+        assert "-" in patient["phone"]
+
+    def test_get_patient_includes_insurance(self, client, mock_services):
+        """Should return patient insurance information"""
+        response = client.get("/patients/patient-001")
+        patient = response.json()
+
+        assert "insurance" in patient
+        assert isinstance(patient["insurance"], dict)
+
+    def test_get_patient_insurance_structure(self, client, mock_services):
+        """Insurance should have provider and memberId fields"""
+        response = client.get("/patients/patient-001")
+        patient = response.json()
+
+        insurance = patient["insurance"]
+        assert "provider" in insurance
+        assert "memberId" in insurance
+        assert isinstance(insurance["provider"], str)
+        assert isinstance(insurance["memberId"], str)
+
+    def test_get_patient_insurance_has_values(self, client, mock_services):
+        """Insurance fields should have non-empty values"""
+        response = client.get("/patients/patient-001")
+        patient = response.json()
+
+        insurance = patient["insurance"]
+        assert len(insurance["provider"]) > 0
+        assert len(insurance["memberId"]) > 0
+
+    def test_all_patients_have_phone_and_insurance(self, client, mock_services):
+        """All seeded patients should have phone and insurance"""
+        response = client.get("/patients")
+        patients = response.json()
+
+        for patient in patients:
+            # Get full patient details
+            detail_response = client.get(f"/patients/{patient['id']}")
+            detail = detail_response.json()
+
+            assert "phone" in detail, f"Patient {patient['id']} missing phone"
+            assert "insurance" in detail, f"Patient {patient['id']} missing insurance"
+

@@ -692,48 +692,67 @@ export function PatientChartPage() {
         {/* Patient Info Card */}
         <Card className="mb-normal">
           <CardContent>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-normal">
-                <button
-                  onClick={handleBack}
-                  className="text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <div>
-                  <div className="flex items-center gap-tight">
-                    <h1 className="text-xl font-semibold text-deep-ice">
-                      {patient.name}, {calculateAge(patient.dateOfBirth)}{getGenderAbbrev(patient.gender)}
-                    </h1>
-                    <span className="text-[15px] text-text-secondary">MRN: {patient.mrn}</span>
-                  </div>
-                  <p className="text-[15px] text-text-secondary mt-1">
-                    DOB: {formatDOB(patient.dateOfBirth)}
-                    {patient.nextAppointment && (
-                      <> | Next: {patient.nextAppointment.date} {patient.nextAppointment.time} - {patient.nextAppointment.reason}</>
-                    )}
-                  </p>
-                  {hasAllergies && (
-                    <div className="flex items-center gap-tight mt-2">
-                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-critical"></span>
-                      <span className="text-[15px] font-medium text-critical">
-                        ALLERGIES: {patient.allergies!.map(a => `${a.allergen} (${a.reaction})`).join(', ')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-start gap-normal">
               <button
-                onClick={() => navigate('/schedule')}
-                className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors"
+                onClick={handleBack}
+                className="text-text-tertiary hover:text-text-primary transition-colors mt-1"
               >
-                Schedule
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
+              <div className="flex-1">
+                {/* Row 1: Name and MRN */}
+                <div className="flex items-center justify-between">
+                  <h1 className="text-xl font-semibold text-deep-ice">
+                    {patient.name}
+                  </h1>
+                  <span className="text-[15px] text-text-secondary">MRN: {patient.mrn}</span>
+                </div>
+                {/* Row 2: Age/Gender, DOB, and Copy button */}
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-[15px] text-text-secondary">
+                    {calculateAge(patient.dateOfBirth)}{getGenderAbbrev(patient.gender)} | DOB: {formatDOB(patient.dateOfBirth)}
+                  </p>
+                  <button
+                    onClick={() => {
+                      const info = `${patient.name}\nMRN: ${patient.mrn}\nDOB: ${formatDOB(patient.dateOfBirth)}`;
+                      navigator.clipboard.writeText(info);
+                    }}
+                    className="text-[15px] text-glacier-blue hover:text-deep-ice transition-colors flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+                {/* Row 3: Phone */}
+                <p className="text-[15px] text-text-secondary mt-1">
+                  Phone: {patient.phone || '(555) 123-4567'}
+                </p>
+                {/* Row 4: Insurance */}
+                <p className="text-[15px] text-text-secondary mt-1">
+                  Insurance: {patient.insurance
+                    ? `${patient.insurance.provider} - ${patient.insurance.memberId}`
+                    : 'Blue Cross Blue Shield - ABC123456789'}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Allergy Banner */}
+        {hasAllergies && (
+          <div className="mb-normal px-normal py-tight bg-critical/10 border border-critical/20 rounded-md">
+            <div className="flex items-center gap-tight">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-critical"></span>
+              <span className="text-[15px] font-medium text-critical">
+                ALLERGIES: {patient.allergies!.map(a => `${a.allergen} (${a.reaction})`).join(', ')}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Active Medications & Problem List - Side by Side */}
         <div className="grid grid-cols-2 gap-normal mb-normal">
