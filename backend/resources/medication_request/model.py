@@ -55,6 +55,19 @@ class Dosage:
     additional_instructions: str | None = None
 
 
+class MedicationForm(str, Enum):
+    """Form of the medication."""
+    TABLET = "tablet"
+    CAPSULE = "capsule"
+    LIQUID = "liquid"
+    INJECTION = "injection"
+    TOPICAL = "topical"
+    INHALER = "inhaler"
+    PATCH = "patch"
+    CREAM = "cream"
+    SOLUTION = "solution"
+
+
 @dataclass
 class MedicationRequest(DomainResource):
     """
@@ -72,6 +85,12 @@ class MedicationRequest(DomainResource):
     medication: CodeableConcept = field(
         default_factory=lambda: CodeableConcept(code="unknown", display="Unknown")
     )
+
+    # Medication details
+    brand_name: str | None = None  # e.g., "Lipitor", "Zestril"
+    strength: str | None = None  # e.g., "10mg", "500mg"
+    form: MedicationForm | None = None  # e.g., tablet, capsule, inhaler
+    is_controlled: bool = False  # DEA scheduled controlled substance
 
     # For whom
     subject: Reference = field(default_factory=lambda: Reference(reference="Patient/unknown"))
@@ -94,6 +113,12 @@ class MedicationRequest(DomainResource):
 
     # Status reason (why stopped, cancelled, etc.)
     status_reason: str | None = None
+
+    # Additional clinical info
+    pharmacy: str | None = None  # Dispensing pharmacy name
+    indication: str | None = None  # Clinical reason for prescribing
+    prescriber_notes: str | None = None  # Additional notes from prescriber
+    drug_class: str | None = None  # Medication class (e.g., "Antihypertensive", "Statin")
 
     @property
     def medication_name(self) -> str:
@@ -140,16 +165,48 @@ class MedicationRequest(DomainResource):
             "dispenseRefills": self.dispense_refills,
         }
 
+    # Route abbreviation mapping
+    ROUTE_ABBREVIATIONS: ClassVar[dict[str, str]] = {
+        "oral": "PO",
+        "intravenous": "IV",
+        "intramuscular": "IM",
+        "subcutaneous": "SubQ",
+        "topical": "topical",
+        "inhalation": "inhaled",
+        "sublingual": "SL",
+        "rectal": "PR",
+        "ophthalmic": "ophthalmic",
+        "otic": "otic",
+        "nasal": "nasal",
+        "transdermal": "transdermal",
+    }
+
     def to_bff_dict(self) -> dict:
         """Convert to BFF-friendly format (matches current frontend expectations)."""
         dosage = self.primary_dosage
+        route = dosage.route if dosage else None
+        route_abbrev = self.ROUTE_ABBREVIATIONS.get(route, route) if route else None
+
         return {
             "id": self.id,
             "name": self.medication_name,
+            "brandName": self.brand_name,
+            "strength": self.strength,
+            "form": self.form.value if self.form else None,
             "dosage": dosage.dose if dosage else None,
             "frequency": dosage.frequency if dosage else None,
-            "started": self.authored_on.strftime("%Y-%m-%d"),
+            "route": route_abbrev,
+            "started": self.authored_on.strftime("%m/%d/%Y"),
+            "prescriber": self.requester.display if self.requester and self.requester.display else None,
             "status": self._get_display_status(),
+            "isPRN": dosage.as_needed if dosage else False,
+            "isControlled": self.is_controlled,
+            # Additional fields for detail view
+            "pharmacy": self.pharmacy,
+            "refillsRemaining": self.dispense_refills,
+            "indication": self.indication,
+            "prescriberNotes": self.prescriber_notes,
+            "drugClass": self.drug_class,
         }
 
     def _get_display_status(self) -> str:

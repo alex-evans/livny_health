@@ -48,12 +48,37 @@ class MedicationRequestRepository(InMemoryRepository[MedicationRequest]):
         return results
 
     async def get_active_for_patient(self, patient_id: str) -> list[MedicationRequest]:
-        """Get all active medication requests for a patient."""
-        return await self.list(
+        """Get all active medication requests for a patient, sorted by start date (most recent first)."""
+        results = await self.list(
             patient_id=patient_id,
             status=[MedicationRequestStatus.ACTIVE.value, MedicationRequestStatus.ON_HOLD.value],
         )
+        return sorted(results, key=lambda m: m.authored_on, reverse=True)
 
     async def get_by_patient(self, patient_id: str) -> list[MedicationRequest]:
         """Get all medication requests for a patient (any status)."""
         return await self.list(patient_id=patient_id)
+
+    async def discontinue(self, medication_id: str, reason: str | None = None) -> MedicationRequest | None:
+        """
+        Discontinue a medication by changing its status to STOPPED.
+
+        Args:
+            medication_id: The ID of the medication to discontinue
+            reason: Optional reason for discontinuing
+
+        Returns:
+            The updated MedicationRequest or None if not found
+        """
+        medication = await self.get(medication_id)
+        if not medication:
+            return None
+
+        # Update the status
+        medication.status = MedicationRequestStatus.STOPPED
+        if reason:
+            medication.status_reason = reason
+
+        # Save the update
+        await self.update(medication_id, medication)
+        return medication

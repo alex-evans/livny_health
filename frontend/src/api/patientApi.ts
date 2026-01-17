@@ -139,7 +139,7 @@ export async function submitPrescription(
   patientId: string,
   medications: PrescribedMedication[]
 ): Promise<PrescriptionResponse> {
-  const response = await fetch(`${BFF_URL}/patients/${patientId}/prescriptions`, {
+  const response = await fetch(`${BFF_URL}/medications/${patientId}/prescriptions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

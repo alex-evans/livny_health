@@ -34,6 +34,7 @@ class TestPatients:
     SARAH_JOHNSON = {"id": "patient-001", "name": "Sarah Johnson"}
     MICHAEL_CHEN = {"id": "patient-002", "name": "Michael Chen"}
     EMILY_RODRIGUEZ = {"id": "patient-003", "name": "Emily Rodriguez"}
+    JAMES_WILLIAMS = {"id": "patient-004", "name": "James Williams"}
     ROBERT_THOMPSON = {"id": "patient-006", "name": "Robert Thompson"}
     PATRICIA_MARTINEZ = {"id": "patient-007", "name": "Patricia Martinez"}
 
@@ -93,6 +94,119 @@ class TestPatientEndpointsIntegration:
         )
 
         assert len(patient["activeMedications"]) == len(repo_medications)
+
+    def test_get_patient_medications_sorted_by_start_date_descending(self, client):
+        """GET /patients/{id} should return medications sorted by start date (most recent first)."""
+        # Patricia Martinez has 4 medications with different start dates:
+        # - Sertraline: 2023-08-01 (most recent)
+        # - Warfarin: 2023-02-10
+        # - Simvastatin: 2022-05-15
+        # - Lisinopril: 2021-11-20 (oldest)
+        response = client.get(f"/patients/{TestPatients.PATRICIA_MARTINEZ['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        assert len(medications) == 4
+
+        # Verify the expected order (most recent first)
+        medication_names = [med["name"] for med in medications]
+        assert medication_names[0] == "Sertraline"  # 08/01/2023 (most recent)
+        assert medication_names[1] == "Warfarin"    # 02/10/2023
+        assert medication_names[2] == "Simvastatin" # 05/15/2022
+        assert medication_names[3] == "Lisinopril"  # 11/20/2021 (oldest)
+
+        # Verify the dates are in MM/DD/YYYY format
+        started_dates = [med["started"] for med in medications]
+        assert started_dates[0] == "08/01/2023"
+        assert started_dates[1] == "02/10/2023"
+        assert started_dates[2] == "05/15/2022"
+        assert started_dates[3] == "11/20/2021"
+
+    def test_get_patient_medications_include_all_required_fields(self, client):
+        """GET /patients/{id} should return medications with all required display fields."""
+        response = client.get(f"/patients/{TestPatients.SARAH_JOHNSON['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        assert len(medications) == 7
+
+        # Find Lisinopril to test all fields
+        lisinopril = next((m for m in medications if m["name"] == "Lisinopril"), None)
+        assert lisinopril is not None
+
+        # Verify all required fields are present
+        assert "name" in lisinopril
+        assert "brandName" in lisinopril
+        assert "strength" in lisinopril
+        assert "form" in lisinopril
+        assert "frequency" in lisinopril
+        assert "route" in lisinopril
+        assert "started" in lisinopril
+        assert "prescriber" in lisinopril
+
+        # Verify field values
+        assert lisinopril["name"] == "Lisinopril"
+        assert lisinopril["brandName"] == "Zestril"
+        assert lisinopril["strength"] == "10mg"
+        assert lisinopril["form"] == "tablet"
+        assert lisinopril["frequency"] == "once daily"
+        assert lisinopril["route"] == "PO"  # Route abbreviation
+        assert lisinopril["started"] == "06/15/2023"  # MM/DD/YYYY format
+        assert lisinopril["prescriber"] == "Dr. Elizabeth Frost"
+
+    def test_get_patient_medications_inhaler_has_correct_form_and_route(self, client):
+        """GET /patients/{id} should return correct form and route for inhaler medications."""
+        # Emily Rodriguez has an Albuterol inhaler (PRN medication)
+        response = client.get(f"/patients/{TestPatients.EMILY_RODRIGUEZ['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        assert len(medications) == 1
+
+        albuterol = medications[0]
+        assert albuterol["name"] == "Albuterol"
+        assert albuterol["brandName"] == "ProAir HFA"
+        assert albuterol["strength"] == "90mcg/actuation"
+        assert albuterol["form"] == "inhaler"
+        assert albuterol["route"] == "inhaled"  # Route abbreviation
+        assert albuterol["frequency"] == "as needed"
+        assert albuterol["prescriber"] == "Dr. Elizabeth Frost"
+        assert albuterol["isPRN"] is True  # PRN medication
+        assert albuterol["isControlled"] is False  # Not a controlled substance
+
+    def test_get_patient_medication_without_brand_name(self, client):
+        """Medications without brand names should return null for brandName."""
+        response = client.get(f"/patients/{TestPatients.SARAH_JOHNSON['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        aspirin = next((m for m in medications if m["name"] == "Aspirin"), None)
+        assert aspirin is not None
+        assert aspirin["brandName"] is None  # Aspirin has no brand name
+
+    def test_get_patient_medication_controlled_substance_flag(self, client):
+        """Controlled substances should have isControlled flag set to true."""
+        # James Williams has Gabapentin which is a controlled substance
+        response = client.get(f"/patients/{TestPatients.JAMES_WILLIAMS['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        gabapentin = next((m for m in medications if m["name"] == "Gabapentin"), None)
+        assert gabapentin is not None
+        assert gabapentin["isControlled"] is True  # Schedule V controlled substance
+        assert gabapentin["isPRN"] is False  # Not a PRN medication
+
+    def test_get_patient_medication_prn_and_controlled(self, client):
+        """Medications can be both PRN and controlled."""
+        # Sarah Johnson has Tramadol which is both PRN and controlled
+        response = client.get(f"/patients/{TestPatients.SARAH_JOHNSON['id']}")
+        patient = response.json()
+
+        medications = patient["activeMedications"]
+        tramadol = next((m for m in medications if m["name"] == "Tramadol"), None)
+        assert tramadol is not None
+        assert tramadol["isPRN"] is True  # As needed medication
+        assert tramadol["isControlled"] is True  # Schedule IV controlled substance
 
     def test_get_patient_with_no_allergies(self, client):
         """Patient without allergies should return empty allergies list."""
