@@ -250,6 +250,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 6, 15),
             dosage_instruction=[Dosage(text="10mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=3,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Hypertension management",
+            prescriber_notes="Monitor potassium levels",
+            drug_class="ACE Inhibitor",
         ),
         MedicationRequest(
             id="med-2",
@@ -262,6 +267,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2022, 3, 10),
             dosage_instruction=[Dosage(text="500mg twice daily", dose="1 tablet", frequency="twice daily", route="oral")],
+            dispense_refills=5,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Type 2 Diabetes",
+            prescriber_notes="Take with meals to reduce GI upset",
+            drug_class="Biguanide",
         ),
         MedicationRequest(
             id="med-3",
@@ -274,6 +284,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 1, 5),
             dosage_instruction=[Dosage(text="20mg at bedtime", dose="1 tablet", frequency="at bedtime", route="oral")],
+            dispense_refills=2,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Hyperlipidemia",
+            prescriber_notes="Check LFTs annually",
+            drug_class="Statin",
         ),
         MedicationRequest(
             id="med-14",
@@ -286,6 +301,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2024, 2, 10),
             dosage_instruction=[Dosage(text="50mg twice daily", dose="1 tablet", frequency="twice daily", route="oral")],
+            dispense_refills=4,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Hypertension, rate control",
+            prescriber_notes="Monitor heart rate",
+            drug_class="Beta Blocker",
         ),
         MedicationRequest(
             id="med-15",
@@ -298,6 +318,10 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 12, 1),
             dosage_instruction=[Dosage(text="81mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=11,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Cardiovascular protection",
+            drug_class="NSAID / Antiplatelet",
         ),
         MedicationRequest(
             id="med-16",
@@ -310,6 +334,29 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2022, 8, 20),
             dosage_instruction=[Dosage(text="25mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=2,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Hypertension, edema",
+            prescriber_notes="Monitor electrolytes",
+            drug_class="Thiazide Diuretic",
+        ),
+        MedicationRequest(
+            id="med-17",
+            status=MedicationRequestStatus.ACTIVE,
+            medication=CodeableConcept(code="tramadol", display="Tramadol"),
+            brand_name="Ultram",
+            strength="50mg",
+            form=MedicationForm.TABLET,
+            is_controlled=True,  # Schedule IV controlled substance
+            subject=Reference.to("Patient", "patient-001"),
+            requester=prescriber,
+            authored_on=datetime.now() - timedelta(days=3),  # Recently prescribed
+            dosage_instruction=[Dosage(text="50mg every 6 hours as needed", dose="1 tablet", frequency="every 6 hours", route="oral", as_needed=True)],
+            dispense_refills=0,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Acute pain management",
+            prescriber_notes="Limit to 7 days. Reassess if pain persists.",
+            drug_class="Opioid Analgesic",
         ),
         # Patient 002 - Michael Chen
         MedicationRequest(
@@ -323,6 +370,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2024, 1, 20),
             dosage_instruction=[Dosage(text="20mg daily before breakfast", dose="1 capsule", frequency="once daily", route="oral")],
+            dispense_refills=5,
+            pharmacy="Walgreens - 456 Oak Ave",
+            indication="GERD",
+            prescriber_notes="Take 30 min before eating",
+            drug_class="Proton Pump Inhibitor",
         ),
         # Patient 003 - Emily Rodriguez
         MedicationRequest(
@@ -336,6 +388,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 9, 1),
             dosage_instruction=[Dosage(text="90mcg as needed", dose="2 puffs", frequency="as needed", route="inhalation", as_needed=True)],
+            dispense_refills=6,
+            pharmacy="Rite Aid - 789 Elm St",
+            indication="Asthma - rescue inhaler",
+            prescriber_notes="Use spacer if available. If using >2x/week, reassess controller therapy.",
+            drug_class="Beta-2 Agonist",
         ),
         # Patient 004 - James Williams
         MedicationRequest(
@@ -349,6 +406,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2021, 11, 30),
             dosage_instruction=[Dosage(text="5mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=3,
+            pharmacy="Costco Pharmacy - 555 Commerce Dr",
+            indication="Hypertension",
+            prescriber_notes="Monitor for peripheral edema",
+            drug_class="Calcium Channel Blocker",
         ),
         MedicationRequest(
             id="med-7",
@@ -357,10 +419,16 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             brand_name="Neurontin",
             strength="300mg",
             form=MedicationForm.CAPSULE,
+            is_controlled=True,  # Schedule V controlled substance
             subject=Reference.to("Patient", "patient-004"),
             requester=prescriber,
             authored_on=datetime(2023, 4, 15),
             dosage_instruction=[Dosage(text="300mg three times daily", dose="1 capsule", frequency="three times daily", route="oral")],
+            dispense_refills=2,
+            pharmacy="Costco Pharmacy - 555 Commerce Dr",
+            indication="Peripheral neuropathy",
+            prescriber_notes="May cause dizziness. Avoid driving until tolerance established.",
+            drug_class="Anticonvulsant / Neuropathic Pain",
         ),
         # Patient 006 - Robert Thompson
         MedicationRequest(
@@ -374,6 +442,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2022, 8, 15),
             dosage_instruction=[Dosage(text="5mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=1,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Atrial fibrillation - stroke prevention",
+            prescriber_notes="Target INR 2-3. Weekly INR monitoring.",
+            drug_class="Anticoagulant",
         ),
         MedicationRequest(
             id="med-9",
@@ -386,6 +459,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2021, 3, 20),
             dosage_instruction=[Dosage(text="10mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=4,
+            pharmacy="CVS Pharmacy - 123 Main St",
+            indication="Hypertension, heart failure",
+            prescriber_notes="Monitor renal function",
+            drug_class="ACE Inhibitor",
         ),
         # Patient 007 - Patricia Martinez
         MedicationRequest(
@@ -399,6 +477,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 2, 10),
             dosage_instruction=[Dosage(text="5mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=2,
+            pharmacy="Walgreens - 456 Oak Ave",
+            indication="Atrial fibrillation",
+            prescriber_notes="INR goal 2-3",
+            drug_class="Anticoagulant",
         ),
         MedicationRequest(
             id="med-11",
@@ -411,6 +494,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2022, 5, 15),
             dosage_instruction=[Dosage(text="40mg at bedtime", dose="1 tablet", frequency="at bedtime", route="oral")],
+            dispense_refills=3,
+            pharmacy="Walgreens - 456 Oak Ave",
+            indication="Hyperlipidemia",
+            prescriber_notes="Avoid grapefruit juice",
+            drug_class="Statin",
         ),
         MedicationRequest(
             id="med-12",
@@ -423,6 +511,11 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2023, 8, 1),
             dosage_instruction=[Dosage(text="50mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=5,
+            pharmacy="Walgreens - 456 Oak Ave",
+            indication="Depression",
+            prescriber_notes="May take 4-6 weeks for full effect",
+            drug_class="SSRI",
         ),
         MedicationRequest(
             id="med-13",
@@ -435,6 +528,10 @@ def seed_medication_requests(repo: MedicationRequestRepository) -> None:
             requester=prescriber,
             authored_on=datetime(2021, 11, 20),
             dosage_instruction=[Dosage(text="20mg daily", dose="1 tablet", frequency="once daily", route="oral")],
+            dispense_refills=4,
+            pharmacy="Walgreens - 456 Oak Ave",
+            indication="Hypertension",
+            drug_class="ACE Inhibitor",
         ),
     ]
     repo._seed(medications)

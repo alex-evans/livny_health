@@ -62,3 +62,34 @@ export async function getMedicationDefaults(medicationName: string): Promise<Med
   }
   return response.json();
 }
+
+export interface DiscontinueMedicationResponse {
+  success: boolean;
+  medication: {
+    id: string;
+    name: string;
+    status: string;
+  };
+}
+
+export async function discontinueMedication(
+  medicationId: string,
+  reason?: string
+): Promise<DiscontinueMedicationResponse> {
+  const response = await fetch(`${BFF_URL}/medications/${medicationId}/discontinue`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Medication not found');
+    }
+    throw new Error('Failed to discontinue medication');
+  }
+
+  return response.json();
+}

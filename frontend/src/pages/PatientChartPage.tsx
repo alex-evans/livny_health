@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
-import { useDebounce } from '../hooks';
-import { searchMedications, getPatient, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, Patient, AllergyAlert, DrugInteraction } from '../types';
+import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
+import { useDebounce, useMedicationFreshness } from '../hooks';
+import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -235,9 +236,19 @@ export function PatientChartPage() {
   const navigate = useNavigate();
   const { patientId } = useParams<{ patientId: string }>();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [isLoadingPatient, setIsLoadingPatient] = useState(true);
-  const [patientError, setPatientError] = useState<string | null>(null);
+
+  // Use the medication freshness hook for patient data with real-time capabilities
+  const {
+    patient,
+    isLoading: isLoadingPatient,
+    isRefetching,
+    error: patientError,
+    refetch: refetchPatient,
+    addMedications,
+    removeMedication,
+    timeSinceUpdate,
+  } = useMedicationFreshness(patientId);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MedicationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -251,8 +262,52 @@ export function PatientChartPage() {
   const [isSubmittingPrescription, setIsSubmittingPrescription] = useState(false);
   const [prescriptionSuccess, setPrescriptionSuccess] = useState(false);
   const [showAllMedications, setShowAllMedications] = useState(false);
+  const [selectedActiveMedication, setSelectedActiveMedication] = useState<ActiveMedication | null>(null);
+  const [medicationSortBy, setMedicationSortBy] = useState<'name' | 'started' | 'drugClass'>('started');
+  const [medicationFilter, setMedicationFilter] = useState('');
+  const [isDiscontinuing, setIsDiscontinuing] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Filter and sort active medications
+  const filteredAndSortedMedications = useMemo(() => {
+    if (!patient?.activeMedications) return [];
+
+    let medications = [...patient.activeMedications];
+
+    // Filter by name or drug class
+    if (medicationFilter.trim()) {
+      const filterLower = medicationFilter.toLowerCase();
+      medications = medications.filter(
+        (med) =>
+          med.name.toLowerCase().includes(filterLower) ||
+          med.brandName?.toLowerCase().includes(filterLower) ||
+          med.drugClass?.toLowerCase().includes(filterLower)
+      );
+    }
+
+    // Sort medications
+    medications.sort((a, b) => {
+      switch (medicationSortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'started': {
+          // Parse MM/DD/YYYY format
+          const parseDate = (dateStr: string) => {
+            const [month, day, year] = dateStr.split('/').map(Number);
+            return new Date(year, month - 1, day);
+          };
+          return parseDate(b.started).getTime() - parseDate(a.started).getTime();
+        }
+        case 'drugClass':
+          return (a.drugClass || 'zzz').localeCompare(b.drugClass || 'zzz');
+        default:
+          return 0;
+      }
+    });
+
+    return medications;
+  }, [patient?.activeMedications, medicationFilter, medicationSortBy]);
 
   useEffect(() => {
     const userJson = sessionStorage.getItem('currentUser');
@@ -262,27 +317,6 @@ export function PatientChartPage() {
       navigate('/login');
     }
   }, [navigate]);
-
-  useEffect(() => {
-    async function fetchPatient() {
-      if (!patientId) {
-        setPatientError('No patient ID provided');
-        setIsLoadingPatient(false);
-        return;
-      }
-
-      try {
-        const patientData = await getPatient(patientId);
-        setPatient(patientData);
-      } catch (err) {
-        setPatientError(err instanceof Error ? err.message : 'Failed to load patient');
-      } finally {
-        setIsLoadingPatient(false);
-      }
-    }
-
-    fetchPatient();
-  }, [patientId]);
 
   useEffect(() => {
     async function performSearch() {
@@ -616,6 +650,23 @@ export function PatientChartPage() {
     navigate(-1);
   };
 
+  const handleDiscontinueMedication = async (medicationId: string, reason?: string) => {
+    setIsDiscontinuing(true);
+    try {
+      const result = await discontinueMedication(medicationId, reason);
+      if (result.success) {
+        // Remove the medication from the active list immediately
+        removeMedication(medicationId);
+        // Close the detail modal
+        setSelectedActiveMedication(null);
+      }
+    } catch (error) {
+      console.error('Failed to discontinue medication:', error);
+    } finally {
+      setIsDiscontinuing(false);
+    }
+  };
+
   const handleSubmitPrescription = async () => {
     if (!patientId || prescription.length === 0) return;
 
@@ -632,17 +683,8 @@ export function PatientChartPage() {
       const result = await submitPrescription(patientId, medications);
 
       if (result.success) {
-        // Update patient's active medications locally
-        setPatient((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            activeMedications: [
-              ...(prev.activeMedications || []),
-              ...result.medications,
-            ],
-          };
-        });
+        // Update patient's active medications using the freshness hook
+        addMedications(result.medications);
 
         // Clear the prescription and show success
         setPrescription([]);
@@ -760,46 +802,136 @@ export function PatientChartPage() {
           {/* Active Medications */}
           <Card>
             <CardContent>
-              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
-                Active Medications
-              </h3>
+              <div className="flex items-center justify-between mb-normal">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
+                    Active Medications
+                  </h3>
+                  {patient.activeMedications && patient.activeMedications.length > 0 && (
+                    <span className="text-[11px] text-text-tertiary">
+                      ({filteredAndSortedMedications.length} of {patient.activeMedications.length})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {timeSinceUpdate && (
+                    <span className="text-[11px] text-text-tertiary">
+                      {timeSinceUpdate}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => refetchPatient()}
+                    disabled={isRefetching}
+                    className={cn(
+                      'p-1 rounded text-text-tertiary hover:text-glacier-blue hover:bg-arctic transition-colors',
+                      isRefetching && 'animate-spin'
+                    )}
+                    title="Refresh medications"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Search and Sort Controls */}
+              {patient.activeMedications && patient.activeMedications.length > 0 && (
+                <div className="flex gap-tight mb-normal">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      placeholder="Filter by name or class..."
+                      value={medicationFilter}
+                      onChange={(e) => setMedicationFilter(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-md border border-frost bg-white text-[13px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-glacier-blue focus:border-transparent"
+                    />
+                  </div>
+                  <select
+                    value={medicationSortBy}
+                    onChange={(e) => setMedicationSortBy(e.target.value as 'name' | 'started' | 'drugClass')}
+                    className="px-2 py-1.5 rounded-md border border-frost bg-white text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-glacier-blue"
+                  >
+                    <option value="name">A-Z</option>
+                    <option value="started">Newest</option>
+                    <option value="drugClass">Class</option>
+                  </select>
+                </div>
+              )}
+
               {patient.activeMedications && patient.activeMedications.length > 0 ? (
                 <>
-                  <ul className="space-y-3">
-                    {patient.activeMedications
-                      .slice(0, showAllMedications ? undefined : 5)
-                      .map((med) => (
-                        <li
-                          key={med.id}
-                          className="text-[15px] text-text-primary"
-                          title={med.prescriber ? `Prescribed by ${med.prescriber}` : undefined}
+                  {filteredAndSortedMedications.length > 0 ? (
+                    <>
+                      <ul className="space-y-3">
+                        {filteredAndSortedMedications
+                          .slice(0, showAllMedications ? undefined : 5)
+                          .map((med) => {
+                            // Check if medication was started within the last 7 days
+                            const [month, day, year] = med.started.split('/').map(Number);
+                            const startDate = new Date(year, month - 1, day);
+                            const sevenDaysAgo = new Date();
+                            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                            const isNew = startDate >= sevenDaysAgo;
+
+                            return (
+                              <li
+                                key={med.id}
+                                className="text-[15px] text-text-primary"
+                              >
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-text-tertiary">•</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <MedicationTooltip medication={med}>
+                                      <button
+                                        onClick={() => setSelectedActiveMedication(med)}
+                                        className="text-left hover:text-glacier-blue transition-colors cursor-pointer"
+                                      >
+                                        <span className="font-medium">{med.name}</span>
+                                        {med.brandName && <span className="text-text-secondary"> ({med.brandName})</span>}
+                                        {med.strength && <span className="text-text-secondary"> {med.strength}</span>}
+                                        {med.form && <span className="text-text-tertiary text-[13px]"> {med.form}</span>}
+                                      </button>
+                                    </MedicationTooltip>
+                                    {isNew && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-glacier-blue/10 text-glacier-blue">
+                                        New
+                                      </span>
+                                    )}
+                                    {med.isPRN && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-700">
+                                        PRN
+                                      </span>
+                                    )}
+                                    {med.isControlled && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700" title="Controlled Substance">
+                                        ℞
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="ml-3 text-[13px] text-text-secondary">
+                                  {med.frequency}
+                                  {med.route && <span> · {med.route}</span>}
+                                  {med.started && <span> · {med.started}</span>}
+                                </div>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                      {filteredAndSortedMedications.length > 5 && (
+                        <button
+                          onClick={() => setShowAllMedications(!showAllMedications)}
+                          className="mt-normal text-[13px] text-glacier-blue hover:text-deep-ice transition-colors"
                         >
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-text-tertiary">•</span>
-                            <div>
-                              <span className="font-medium">{med.name}</span>
-                              {med.brandName && <span className="text-text-secondary"> ({med.brandName})</span>}
-                              {med.strength && <span className="text-text-secondary"> {med.strength}</span>}
-                              {med.form && <span className="text-text-tertiary text-[13px]"> {med.form}</span>}
-                            </div>
-                          </div>
-                          <div className="ml-3 text-[13px] text-text-secondary">
-                            {med.frequency}
-                            {med.route && <span> · {med.route}</span>}
-                            {med.started && <span> · {med.started}</span>}
-                          </div>
-                        </li>
-                      ))}
-                  </ul>
-                  {patient.activeMedications.length > 5 && (
-                    <button
-                      onClick={() => setShowAllMedications(!showAllMedications)}
-                      className="mt-normal text-[13px] text-glacier-blue hover:text-deep-ice transition-colors"
-                    >
-                      {showAllMedications
-                        ? 'Show Less'
-                        : `View All (${patient.activeMedications.length})`}
-                    </button>
+                          {showAllMedications
+                            ? 'Show Less'
+                            : `View All (${filteredAndSortedMedications.length})`}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-[15px] text-text-secondary">No medications match your filter</p>
                   )}
                 </>
               ) : (
@@ -1039,6 +1171,15 @@ export function PatientChartPage() {
           medicationName={pendingInteractionMedication.name}
           onClose={handleCriticalInteractionClose}
           onOverride={handleInteractionOverride}
+        />
+      )}
+
+      {selectedActiveMedication && (
+        <MedicationDetailModal
+          medication={selectedActiveMedication}
+          onClose={() => setSelectedActiveMedication(null)}
+          onDiscontinue={handleDiscontinueMedication}
+          isDiscontinuing={isDiscontinuing}
         />
       )}
     </div>

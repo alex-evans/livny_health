@@ -57,4 +57,12 @@ export interface ActiveMedication {
   started: string;
   prescriber?: string | null;
   status?: string;
+  isPRN?: boolean;
+  isControlled?: boolean;
+  // Additional fields for detail view
+  pharmacy?: string | null;
+  refillsRemaining?: number | null;
+  indication?: string | null;
+  prescriberNotes?: string | null;
+  drugClass?: string | null;
 }

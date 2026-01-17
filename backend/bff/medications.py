@@ -12,6 +12,33 @@ from services import PatientNotFoundError
 router = APIRouter(prefix='/medications', tags=['medications'])
 
 
+# =============================================================================
+# Discontinue Medication Endpoint
+# =============================================================================
+
+class DiscontinueRequest(BaseModel):
+    reason: str | None = None
+
+
+@router.patch("/{medication_id}/discontinue")
+async def discontinue_medication(
+    medication_id: str = Path(..., description="The medication ID to discontinue"),
+    request: DiscontinueRequest = DiscontinueRequest(),
+):
+    """Discontinue (stop) a medication."""
+    repo = dependencies.get_medication_request_repo()
+
+    medication = await repo.discontinue(medication_id, reason=request.reason)
+
+    if not medication:
+        raise HTTPException(status_code=404, detail="Medication not found")
+
+    return {
+        "success": True,
+        "medication": medication.to_bff_dict(),
+    }
+
+
 @router.get("/search")
 async def search_medications(q: str = Query(..., min_length=3)):
     """Search for medications via RxNorm."""

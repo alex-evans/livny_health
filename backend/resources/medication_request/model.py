@@ -90,6 +90,7 @@ class MedicationRequest(DomainResource):
     brand_name: str | None = None  # e.g., "Lipitor", "Zestril"
     strength: str | None = None  # e.g., "10mg", "500mg"
     form: MedicationForm | None = None  # e.g., tablet, capsule, inhaler
+    is_controlled: bool = False  # DEA scheduled controlled substance
 
     # For whom
     subject: Reference = field(default_factory=lambda: Reference(reference="Patient/unknown"))
@@ -112,6 +113,12 @@ class MedicationRequest(DomainResource):
 
     # Status reason (why stopped, cancelled, etc.)
     status_reason: str | None = None
+
+    # Additional clinical info
+    pharmacy: str | None = None  # Dispensing pharmacy name
+    indication: str | None = None  # Clinical reason for prescribing
+    prescriber_notes: str | None = None  # Additional notes from prescriber
+    drug_class: str | None = None  # Medication class (e.g., "Antihypertensive", "Statin")
 
     @property
     def medication_name(self) -> str:
@@ -192,6 +199,14 @@ class MedicationRequest(DomainResource):
             "started": self.authored_on.strftime("%m/%d/%Y"),
             "prescriber": self.requester.display if self.requester and self.requester.display else None,
             "status": self._get_display_status(),
+            "isPRN": dosage.as_needed if dosage else False,
+            "isControlled": self.is_controlled,
+            # Additional fields for detail view
+            "pharmacy": self.pharmacy,
+            "refillsRemaining": self.dispense_refills,
+            "indication": self.indication,
+            "prescriberNotes": self.prescriber_notes,
+            "drugClass": self.drug_class,
         }
 
     def _get_display_status(self) -> str:
