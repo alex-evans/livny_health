@@ -38,6 +38,21 @@ class AllergyIntoleranceRepository(InMemoryRepository[AllergyIntolerance]):
 
         return results
 
-    async def get_by_patient(self, patient_id: str) -> list[AllergyIntolerance]:
-        """Get all allergies for a patient."""
+    async def get_by_patient(
+        self, patient_id: str, include_inactive: bool = False
+    ) -> list[AllergyIntolerance]:
+        """
+        Get allergies for a patient.
+
+        Args:
+            patient_id: The patient ID
+            include_inactive: If True, returns all allergies including inactive/resolved.
+                             If False (default), returns only active allergies.
+        """
+        if include_inactive:
+            return await self.list(patient_id=patient_id)
         return await self.list(patient_id=patient_id, clinical_status="active")
+
+    async def get_all_by_patient(self, patient_id: str) -> list[AllergyIntolerance]:
+        """Get all allergies for a patient including inactive and resolved."""
+        return await self.list(patient_id=patient_id)

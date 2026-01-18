@@ -7,7 +7,7 @@ A Patient is an individual receiving healthcare services.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import ClassVar
 
 from resources.core import (
@@ -17,6 +17,7 @@ from resources.core import (
     Identifier,
     ContactPoint,
     Address,
+    Reference,
 )
 
 
@@ -41,6 +42,33 @@ class RecentVitals:
     blood_pressure: str
     weight: str
     temperature: str
+
+
+@dataclass
+class AllergyReviewStatus:
+    """
+    Tracks when a patient's allergy history was last reviewed.
+
+    This is separate from individual allergy updates - it represents
+    a clinician's confirmation that the allergy list is complete and current.
+    """
+    reviewed_at: datetime
+    reviewed_by: Reference | None = None  # Reference to Practitioner who reviewed
+
+    @property
+    def is_stale(self) -> bool:
+        """Check if the review is older than 1 year."""
+        if self.reviewed_at is None:
+            return True
+        age = datetime.now() - self.reviewed_at
+        return age.days > 365
+
+    @property
+    def reviewer_name(self) -> str | None:
+        """Get the reviewer's display name."""
+        if self.reviewed_by and self.reviewed_by.display:
+            return self.reviewed_by.display
+        return None
 
 
 @dataclass
@@ -71,6 +99,7 @@ class Patient(DomainResource):
     problem_list: list[Problem] = field(default_factory=list)
     recent_vitals: RecentVitals | None = None
     insurance: Insurance | None = None
+    allergy_review_status: AllergyReviewStatus | None = None
 
     @property
     def mrn(self) -> str | None:
@@ -136,6 +165,13 @@ class Patient(DomainResource):
                 "bloodPressure": self.recent_vitals.blood_pressure,
                 "weight": self.recent_vitals.weight,
                 "temperature": self.recent_vitals.temperature,
+            }
+
+        if self.allergy_review_status:
+            result["allergyReviewStatus"] = {
+                "reviewedAt": self.allergy_review_status.reviewed_at.isoformat(),
+                "reviewedBy": self.allergy_review_status.reviewer_name,
+                "isStale": self.allergy_review_status.is_stale,
             }
 
         return result

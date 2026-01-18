@@ -2,6 +2,7 @@
 API endpoints for managing allergies
 '''
 
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Path
 from pydantic import BaseModel
 
@@ -9,6 +10,47 @@ from bff.dependencies import get_patient_repo, get_clinical_decision_service
 
 
 router = APIRouter(prefix='/allergies', tags=['allergies'])
+
+
+###############
+# Allergy Review Status Endpoints
+###############
+
+class MarkAllergiesReviewedRequest(BaseModel):
+    reviewer_id: str | None = None
+    reviewer_name: str | None = None
+
+
+@router.post("/{patient_id}/mark-reviewed")
+async def mark_allergies_reviewed(
+    patient_id: str = Path(..., description="The patient ID"),
+    request: MarkAllergiesReviewedRequest = MarkAllergiesReviewedRequest(),
+):
+    """
+    Mark a patient's allergy history as reviewed.
+
+    This creates or updates the allergy review timestamp, indicating that
+    a clinician has confirmed the allergy list is complete and current.
+    """
+    patient_repo = get_patient_repo()
+    patient = await patient_repo.mark_allergies_reviewed(
+        patient_id=patient_id,
+        reviewer_id=request.reviewer_id,
+        reviewer_name=request.reviewer_name,
+    )
+
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    review_status = patient.allergy_review_status
+    return {
+        "success": True,
+        "allergyReviewStatus": {
+            "reviewedAt": review_status.reviewed_at.isoformat(),
+            "reviewedBy": review_status.reviewer_name,
+            "isStale": review_status.is_stale,
+        },
+    }
 
 
 ###############

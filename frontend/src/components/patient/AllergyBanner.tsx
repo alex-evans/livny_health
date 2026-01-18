@@ -7,7 +7,7 @@ interface AllergyBannerProps {
 
 const severityConfig: Record<AllergySeverity, { label: string; className: string }> = {
   severe: {
-    label: 'Severe',
+    label: 'Critical/Severe',
     className: 'bg-critical text-white',
   },
   moderate: {
@@ -17,6 +17,10 @@ const severityConfig: Record<AllergySeverity, { label: string; className: string
   mild: {
     label: 'Mild',
     className: 'bg-frost text-text-primary',
+  },
+  unknown: {
+    label: 'Unknown',
+    className: 'bg-frost text-text-secondary',
   },
 };
 

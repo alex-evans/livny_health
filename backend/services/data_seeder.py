@@ -12,10 +12,12 @@ from resources import (
     Problem,
     RecentVitals,
     Insurance,
+    AllergyReviewStatus,
     Practitioner,
     PractitionerRepository,
     AllergyIntolerance,
     AllergyReaction,
+    AllergyCategory,
     AllergyIntoleranceRepository,
     MedicationRequest,
     MedicationRequestStatus,
@@ -41,6 +43,9 @@ from resources.core import (
 
 def seed_patients(repo: PatientRepository) -> None:
     """Seed patient data."""
+    # Reference to provider for allergy reviews
+    provider_ref = Reference.to("Practitioner", "provider-001", "Dr. Elizabeth Frost")
+
     patients = [
         Patient(
             id="patient-001",
@@ -60,6 +65,11 @@ def seed_patients(repo: PatientRepository) -> None:
                 blood_pressure="138/82",
                 weight="156 lbs",
                 temperature="98.4°F",
+            ),
+            # Recently reviewed - within last month
+            allergy_review_status=AllergyReviewStatus(
+                reviewed_at=datetime.now() - timedelta(days=30),
+                reviewed_by=provider_ref,
             ),
         ),
         Patient(
@@ -117,6 +127,11 @@ def seed_patients(repo: PatientRepository) -> None:
                 blood_pressure="142/88",
                 weight="210 lbs",
                 temperature="98.6°F",
+            ),
+            # STALE review - over 1 year old, should trigger warning
+            allergy_review_status=AllergyReviewStatus(
+                reviewed_at=datetime.now() - timedelta(days=400),
+                reviewed_by=provider_ref,
             ),
         ),
         Patient(
@@ -189,14 +204,23 @@ def seed_practitioners(repo: PractitionerRepository) -> None:
 
 def seed_allergies(repo: AllergyIntoleranceRepository) -> None:
     """Seed allergy data."""
+    # Reference to the documenting provider
+    provider_ref = Reference.to("Practitioner", "provider-001", "Dr. Elizabeth Frost")
+
     allergies = [
         # Patient 001 - Sarah Johnson
         AllergyIntolerance(
             id="allergy-1",
             patient=Reference.to("Patient", "patient-001", "Sarah Johnson"),
             code=CodeableConcept(code="penicillin", display="Penicillin"),
-            reactions=[AllergyReaction(manifestation="Anaphylaxis", severity="severe")],
+            reactions=[
+                AllergyReaction(manifestation="Anaphylaxis", severity="severe", description="Immediate onset within 10 minutes"),
+                AllergyReaction(manifestation="Hives", severity="moderate", description="Developed after initial anaphylaxis treatment"),
+            ],
             recorded_date=datetime(2020, 1, 15),
+            last_updated=datetime(2024, 6, 10),
+            recorder=provider_ref,
+            notes="Patient carries EpiPen. Avoid all penicillin-class antibiotics including amoxicillin.",
         ),
         AllergyIntolerance(
             id="allergy-2",
@@ -204,6 +228,36 @@ def seed_allergies(repo: AllergyIntoleranceRepository) -> None:
             code=CodeableConcept(code="sulfa", display="Sulfa"),
             reactions=[AllergyReaction(manifestation="Rash", severity="moderate")],
             recorded_date=datetime(2019, 6, 20),
+            last_updated=datetime(2023, 11, 5),
+            recorder=provider_ref,
+            notes="Cross-reactivity with sulfasalazine noted.",
+        ),
+        # Food allergy for Sarah Johnson
+        AllergyIntolerance(
+            id="allergy-6",
+            patient=Reference.to("Patient", "patient-001", "Sarah Johnson"),
+            code=CodeableConcept(code="peanuts", display="Peanuts"),
+            category=AllergyCategory.FOOD,
+            reactions=[
+                AllergyReaction(manifestation="Anaphylaxis", severity="severe", description="Throat swelling, difficulty breathing"),
+                AllergyReaction(manifestation="Facial swelling", severity="moderate"),
+                AllergyReaction(manifestation="Hives", severity="mild"),
+            ],
+            recorded_date=datetime(2018, 3, 10),
+            last_updated=datetime(2024, 1, 15),
+            recorder=provider_ref,
+            notes="Patient carries EpiPen. Avoid all tree nuts as precaution.",
+        ),
+        # Environmental allergy for Sarah Johnson
+        AllergyIntolerance(
+            id="allergy-7",
+            patient=Reference.to("Patient", "patient-001", "Sarah Johnson"),
+            code=CodeableConcept(code="dust-mites", display="Dust Mites"),
+            category=AllergyCategory.ENVIRONMENT,
+            reactions=[AllergyReaction(manifestation="Rhinitis, sneezing", severity="mild")],
+            recorded_date=datetime(2015, 7, 22),
+            last_updated=datetime(2022, 8, 30),
+            recorder=provider_ref,
         ),
         # Patient 002 - Michael Chen
         AllergyIntolerance(
@@ -212,21 +266,73 @@ def seed_allergies(repo: AllergyIntoleranceRepository) -> None:
             code=CodeableConcept(code="aspirin", display="Aspirin"),
             reactions=[AllergyReaction(manifestation="Hives", severity="mild")],
             recorded_date=datetime(2018, 4, 10),
+            last_updated=datetime(2023, 5, 20),
+            recorder=provider_ref,
+            notes="Can tolerate acetaminophen.",
         ),
         # Patient 004 - James Williams
         AllergyIntolerance(
             id="allergy-4",
             patient=Reference.to("Patient", "patient-004", "James Williams"),
             code=CodeableConcept(code="codeine", display="Codeine"),
-            reactions=[AllergyReaction(manifestation="Nausea and vomiting", severity="moderate")],
+            reactions=[
+                AllergyReaction(manifestation="Nausea and vomiting", severity="moderate"),
+                AllergyReaction(manifestation="Severe constipation", severity="mild"),
+            ],
             recorded_date=datetime(2015, 8, 22),
+            last_updated=datetime(2024, 2, 14),
+            recorder=provider_ref,
+            notes="May tolerate tramadol per previous trial. Avoid all opioids if possible.",
         ),
         AllergyIntolerance(
             id="allergy-5",
             patient=Reference.to("Patient", "patient-004", "James Williams"),
             code=CodeableConcept(code="latex", display="Latex"),
+            category=AllergyCategory.ENVIRONMENT,
             reactions=[AllergyReaction(manifestation="Contact dermatitis", severity="mild")],
             recorded_date=datetime(2010, 3, 15),
+            last_updated=datetime(2020, 9, 8),
+            recorder=provider_ref,
+            notes="Use nitrile gloves only.",
+        ),
+        # INACTIVE/RESOLVED ALLERGIES
+        # Patient 001 - Sarah Johnson - Resolved allergy (outgrown)
+        AllergyIntolerance(
+            id="allergy-8",
+            patient=Reference.to("Patient", "patient-001", "Sarah Johnson"),
+            code=CodeableConcept(code="egg", display="Egg"),
+            category=AllergyCategory.FOOD,
+            clinical_status="resolved",
+            reactions=[AllergyReaction(manifestation="Hives", severity="mild")],
+            recorded_date=datetime(1990, 5, 10),
+            last_updated=datetime(2010, 8, 15),
+            recorder=provider_ref,
+            notes="Childhood allergy, outgrown. Tolerates egg products now. Confirmed via oral challenge 2010.",
+        ),
+        # Patient 004 - James Williams - Inactive allergy (refuted after testing)
+        AllergyIntolerance(
+            id="allergy-9",
+            patient=Reference.to("Patient", "patient-004", "James Williams"),
+            code=CodeableConcept(code="ibuprofen", display="Ibuprofen"),
+            clinical_status="inactive",
+            reactions=[AllergyReaction(manifestation="Reported GI upset", severity="mild")],
+            recorded_date=datetime(2018, 11, 20),
+            last_updated=datetime(2022, 3, 10),
+            recorder=provider_ref,
+            notes="Patient reported intolerance, not true allergy. Tolerated in controlled setting. Marked inactive.",
+        ),
+        # Patient 002 - Michael Chen - Resolved environmental allergy
+        AllergyIntolerance(
+            id="allergy-10",
+            patient=Reference.to("Patient", "patient-002", "Michael Chen"),
+            code=CodeableConcept(code="cats", display="Cat Dander"),
+            category=AllergyCategory.ENVIRONMENT,
+            clinical_status="resolved",
+            reactions=[AllergyReaction(manifestation="Rhinitis, watery eyes", severity="mild")],
+            recorded_date=datetime(2005, 6, 15),
+            last_updated=datetime(2020, 1, 8),
+            recorder=provider_ref,
+            notes="After immunotherapy course 2018-2020, no longer symptomatic around cats.",
         ),
     ]
     repo._seed(allergies)

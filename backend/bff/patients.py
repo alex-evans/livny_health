@@ -31,12 +31,13 @@ async def get_patient(patient_id: str = Path(..., description="The patient ID"))
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    allergies = await allergy_repo.get_by_patient(patient_id)
+    # Get all allergies (including inactive) for the toggle view
+    all_allergies = await allergy_repo.get_all_by_patient(patient_id)
     medications = await medication_request_repo.get_active_for_patient(patient_id)
     upcoming_appointments = await appointment_repo.get_upcoming_for_patient(patient_id)
 
     result = patient.to_bff_dict()
-    result["allergies"] = [a.to_bff_dict() for a in allergies]
+    result["allergies"] = [a.to_bff_dict() for a in all_allergies]
     result["activeMedications"] = [m.to_bff_dict() for m in medications]
 
     # Add next appointment if available
