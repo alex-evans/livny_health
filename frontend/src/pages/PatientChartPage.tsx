@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
+import { AllergiesSection } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication } from '../types';
@@ -727,8 +728,6 @@ export function PatientChartPage() {
     );
   }
 
-  const hasAllergies = patient.allergies && patient.allergies.length > 0;
-
   return (
     <div className="min-h-screen bg-snow">
       <div className="max-w-5xl mx-auto px-generous py-generous">
@@ -785,17 +784,11 @@ export function PatientChartPage() {
           </CardContent>
         </Card>
 
-        {/* Allergy Banner */}
-        {hasAllergies && (
-          <div className="mb-normal px-normal py-tight bg-critical/10 border border-critical/20 rounded-md">
-            <div className="flex items-center gap-tight">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-critical"></span>
-              <span className="text-[15px] font-medium text-critical">
-                ALLERGIES: {patient.allergies!.map(a => `${a.allergen} (${a.reaction})`).join(', ')}
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Allergies Section */}
+        <AllergiesSection
+          allergies={patient.allergies}
+          allergyReviewStatus={patient.allergyReviewStatus}
+        />
 
         {/* Active Medications & Problem List - Side by Side */}
         <div className="grid grid-cols-2 gap-normal mb-normal">

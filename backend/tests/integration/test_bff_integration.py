@@ -69,19 +69,24 @@ class TestPatientEndpointsIntegration:
         assert len(patients) == len(repo_patients)
 
     def test_get_patient_detail_includes_allergies_from_allergy_repo(self, client, repositories):
-        """GET /patients/{id} should include allergies from allergy repository."""
+        """GET /patients/{id} should include all allergies (active and inactive) from allergy repository."""
         response = client.get(f"/patients/{TestPatients.SARAH_JOHNSON['id']}")
         patient = response.json()
 
         # Verify allergies are included and match repository data
+        # BFF returns all allergies including inactive/resolved for the toggle view
         repo_allergies = run_async(
-            repositories["allergy"].get_by_patient(TestPatients.SARAH_JOHNSON["id"])
+            repositories["allergy"].get_all_by_patient(TestPatients.SARAH_JOHNSON["id"])
         )
 
         assert len(patient["allergies"]) == len(repo_allergies)
         allergen_names = {a["allergen"] for a in patient["allergies"]}
         assert "Penicillin" in allergen_names
         assert "Sulfa" in allergen_names
+
+        # Verify inactive/resolved allergies are included with clinical status
+        inactive_allergies = [a for a in patient["allergies"] if a.get("clinicalStatus") != "active"]
+        assert len(inactive_allergies) > 0, "Should include inactive/resolved allergies"
 
     def test_get_patient_detail_includes_medications_from_medication_repo(self, client, repositories):
         """GET /patients/{id} should include medications from medication request repository."""

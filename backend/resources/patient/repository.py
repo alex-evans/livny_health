@@ -4,9 +4,10 @@ Patient repository - data access layer.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
-from resources.core import InMemoryRepository
-from .model import Patient
+from resources.core import InMemoryRepository, Reference
+from .model import Patient, AllergyReviewStatus
 
 
 class PatientRepository(InMemoryRepository[Patient]):
@@ -44,3 +45,35 @@ class PatientRepository(InMemoryRepository[Patient]):
             if patient.mrn == mrn:
                 return patient
         return None
+
+    async def mark_allergies_reviewed(
+        self,
+        patient_id: str,
+        reviewer_id: str | None = None,
+        reviewer_name: str | None = None,
+    ) -> Patient | None:
+        """
+        Mark a patient's allergy history as reviewed.
+
+        Args:
+            patient_id: The patient ID
+            reviewer_id: Optional practitioner ID who reviewed
+            reviewer_name: Optional practitioner name for display
+
+        Returns:
+            Updated Patient or None if not found
+        """
+        patient = await self.get(patient_id)
+        if not patient:
+            return None
+
+        reviewer_ref = None
+        if reviewer_id:
+            reviewer_ref = Reference.to("Practitioner", reviewer_id, reviewer_name)
+
+        patient.allergy_review_status = AllergyReviewStatus(
+            reviewed_at=datetime.now(),
+            reviewed_by=reviewer_ref,
+        )
+
+        return patient

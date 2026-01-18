@@ -78,6 +78,8 @@ class AllergyIntolerance(DomainResource):
     # When recorded
     recorded_date: datetime | None = None
     recorder: Reference | None = None  # Who recorded the allergy
+    last_updated: datetime | None = None  # When last updated
+    notes: str | None = None  # Additional notes
 
     @property
     def allergen(self) -> str:
@@ -97,6 +99,29 @@ class AllergyIntolerance(DomainResource):
         if self.reactions:
             return self.reactions[0].manifestation
         return "Unknown"
+
+    @property
+    def is_anaphylaxis(self) -> bool:
+        """Check if any reaction is anaphylaxis."""
+        if not self.reactions:
+            return False
+        anaphylaxis_terms = ["anaphylaxis", "anaphylactic"]
+        for reaction in self.reactions:
+            manifestation_lower = reaction.manifestation.lower()
+            if any(term in manifestation_lower for term in anaphylaxis_terms):
+                return True
+        return False
+
+    @property
+    def allergy_type(self) -> str:
+        """Get the allergy type for frontend display (drug, food, environmental, other)."""
+        category_map = {
+            AllergyCategory.MEDICATION: "drug",
+            AllergyCategory.FOOD: "food",
+            AllergyCategory.ENVIRONMENT: "environmental",
+            AllergyCategory.BIOLOGIC: "other",
+        }
+        return category_map.get(self.category, "other")
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
@@ -123,14 +148,36 @@ class AllergyIntolerance(DomainResource):
             "recordedDate": self.recorded_date.isoformat() if self.recorded_date else None,
         }
 
+    @property
+    def documenting_provider(self) -> str | None:
+        """Get the documenting provider name from the recorder reference."""
+        if self.recorder and self.recorder.display:
+            return self.recorder.display
+        return None
+
     def to_bff_dict(self) -> dict:
         """Convert to BFF-friendly format (matches current frontend expectations)."""
         return {
             "id": self.id,
             "allergen": self.allergen,
+            "type": self.allergy_type,
             "reaction": self.reaction,
             "severity": self.severity,
+            "isAnaphylaxis": self.is_anaphylaxis,
             "documented": self.recorded_date.strftime("%Y-%m-%d") if self.recorded_date else None,
+            "clinicalStatus": self.clinical_status,
+            "verificationStatus": self.verification_status.value,
+            "lastUpdated": self.last_updated.strftime("%Y-%m-%d") if self.last_updated else None,
+            "documentingProvider": self.documenting_provider,
+            "notes": self.notes,
+            "reactions": [
+                {
+                    "manifestation": r.manifestation,
+                    "severity": r.severity,
+                    "description": r.description,
+                }
+                for r in self.reactions
+            ],
         }
 
     @classmethod

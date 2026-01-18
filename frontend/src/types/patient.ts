@@ -1,13 +1,32 @@
 import type { ActiveMedication } from './medication';
 
-export type AllergySeverity = 'mild' | 'moderate' | 'severe';
+export type AllergySeverity = 'mild' | 'moderate' | 'severe' | 'unknown';
+export type AllergyType = 'drug' | 'food' | 'environmental' | 'other';
+export type AllergySource = 'patient_reported' | 'chart_documented' | 'verified_by_provider';
+export type AllergyVerificationStatus = 'unconfirmed' | 'confirmed' | 'refuted' | 'entered-in-error';
+export type AllergyClinicalStatus = 'active' | 'inactive' | 'resolved';
+
+export interface AllergyReaction {
+  manifestation: string;
+  severity: AllergySeverity;
+  description?: string | null;
+}
 
 export interface Allergy {
   id: string;
   allergen: string;
+  type: AllergyType;
   reaction: string;
   severity: AllergySeverity;
+  isAnaphylaxis: boolean;
   documented: string;
+  source?: AllergySource;
+  clinicalStatus?: AllergyClinicalStatus;
+  verificationStatus?: AllergyVerificationStatus;
+  lastUpdated?: string | null;
+  documentingProvider?: string | null;
+  notes?: string | null;
+  reactions?: AllergyReaction[];
 }
 
 export interface NextAppointment {
@@ -33,6 +52,12 @@ export interface Insurance {
   memberId: string;
 }
 
+export interface AllergyReviewStatus {
+  reviewedAt: string;
+  reviewedBy: string | null;
+  isStale: boolean;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -46,6 +71,7 @@ export interface Patient {
   nextAppointment?: NextAppointment;
   problemList?: Problem[];
   recentVitals?: RecentVitals;
+  allergyReviewStatus?: AllergyReviewStatus;
 }
 
 export interface AllergyAlert {
