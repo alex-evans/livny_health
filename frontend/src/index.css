@@ -16,6 +16,11 @@
   --color-success: #27AE60;
   --color-info: #3498DB;
 
+  /* Lab Value Colors (color-blind friendly with icons) */
+  --color-lab-high: #E67E22;      /* Orange for high values */
+  --color-lab-low: #2980B9;       /* Blue for low values */
+  --color-lab-borderline: #8E44AD; /* Purple for borderline */
+
   /* Text */
   --color-text-primary: #2C3E50;
   --color-text-secondary: #5D6D7E;

@@ -2,6 +2,7 @@ export { Button } from './Button';
 export { Card, CardHeader, CardTitle, CardDescription, CardContent } from './Card';
 export { Input } from './Input';
 export { Select } from './Select';
+export { Tooltip } from './Tooltip';
 export { AllergyBlockModal } from './AllergyBlockModal';
 export { AllergyWarningBanner } from './AllergyWarningBanner';
 export { DrugInteractionWarning } from './DrugInteractionWarning';

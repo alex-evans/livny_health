@@ -29,6 +29,10 @@ from .medication_search import (
     get_common_dosing,
     get_default_duration,
 )
+from .lab_history import (
+    LabHistoryService,
+    LabHistoryResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -52,4 +56,7 @@ __all__ = [
     "MedicationSearchService",
     "get_common_dosing",
     "get_default_duration",
+    # Lab History
+    "LabHistoryService",
+    "LabHistoryResponse",
 ]

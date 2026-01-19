@@ -25,10 +25,12 @@ from bff.dependencies import (
     get_medication_request_repo,
     get_encounter_repo,
     get_appointment_repo,
+    get_lab_result_repo,
     get_clinical_decision_service,
     get_prescribing_service,
     get_scheduling_service,
     get_medication_search_service,
+    get_lab_history_service,
 )
 
 
@@ -76,6 +78,7 @@ def repositories():
         "medication_request": get_medication_request_repo(),
         "encounter": get_encounter_repo(),
         "appointment": get_appointment_repo(),
+        "lab_result": get_lab_result_repo(),
     }
 
 
@@ -93,6 +96,7 @@ def services():
         "prescribing": get_prescribing_service(),
         "scheduling": get_scheduling_service(),
         "medication_search": get_medication_search_service(),
+        "lab_history": get_lab_history_service(),
     }
 
 
