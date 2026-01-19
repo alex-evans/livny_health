@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection } from '../components/patient';
+import { AllergiesSection, RecentLabsSection } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication } from '../types';
@@ -968,6 +968,9 @@ export function PatientChartPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Recent Labs */}
+        <RecentLabsSection recentLabs={patient.recentLabs} patientId={patientId || ''} />
 
         {/* Medications Section */}
         <div>

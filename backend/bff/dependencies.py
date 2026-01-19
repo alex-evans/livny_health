@@ -19,12 +19,14 @@ from resources import (
     MedicationRequestRepository,
     EncounterRepository,
     AppointmentRepository,
+    LabResultRepository,
 )
 from services import (
     ClinicalDecisionService,
     PrescribingService,
     SchedulingService,
     MedicationSearchService,
+    LabHistoryService,
 )
 from services.data_seeder import seed_all
 
@@ -37,12 +39,14 @@ _medication_repo: MedicationRepository | None = None
 _medication_request_repo: MedicationRequestRepository | None = None
 _encounter_repo: EncounterRepository | None = None
 _appointment_repo: AppointmentRepository | None = None
+_lab_result_repo: LabResultRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
 _prescribing_service: PrescribingService | None = None
 _scheduling_service: SchedulingService | None = None
 _medication_search_service: MedicationSearchService | None = None
+_lab_history_service: LabHistoryService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -97,6 +101,13 @@ def get_appointment_repo() -> AppointmentRepository:
     return _appointment_repo
 
 
+def get_lab_result_repo() -> LabResultRepository:
+    global _lab_result_repo
+    if _lab_result_repo is None:
+        _lab_result_repo = LabResultRepository()
+    return _lab_result_repo
+
+
 def get_clinical_decision_service() -> ClinicalDecisionService:
     global _clinical_decision_service
     if _clinical_decision_service is None:
@@ -137,6 +148,15 @@ def get_medication_search_service() -> MedicationSearchService:
             medication_repo=get_medication_repo(),
         )
     return _medication_search_service
+
+
+def get_lab_history_service() -> LabHistoryService:
+    global _lab_history_service
+    if _lab_history_service is None:
+        _lab_history_service = LabHistoryService(
+            lab_result_repo=get_lab_result_repo(),
+        )
+    return _lab_history_service
 
 
 def ensure_data_seeded() -> None:

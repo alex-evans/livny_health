@@ -1,4 +1,4 @@
-import type { Patient, AllergyCheckResult, DrugInteractionCheckResult } from '../types';
+import type { Patient, AllergyCheckResult, DrugInteractionCheckResult, LabHistoryResponse } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
 
@@ -152,6 +152,25 @@ export async function submitPrescription(
       throw new Error('Patient not found');
     }
     throw new Error('Failed to submit prescription');
+  }
+
+  return response.json();
+}
+
+export async function getLabHistory(
+  patientId: string,
+  testName: string,
+  daysBack: number = 365
+): Promise<LabHistoryResponse> {
+  const response = await fetch(
+    `${BFF_URL}/patients/${patientId}/labs/${encodeURIComponent(testName)}/history?days_back=${daysBack}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Lab history not found');
+    }
+    throw new Error('Failed to fetch lab history');
   }
 
   return response.json();

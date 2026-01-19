@@ -36,6 +36,13 @@ from .appointment import (
     AppointmentFlag,
     AppointmentRepository,
 )
+from .lab_result import (
+    LabResult,
+    LabResultHistory,
+    LabResultStatus,
+    TrendAnalysis,
+    LabResultRepository,
+)
 
 __all__ = [
     # Patient
@@ -76,4 +83,10 @@ __all__ = [
     "AppointmentParticipant",
     "AppointmentFlag",
     "AppointmentRepository",
+    # LabResult
+    "LabResult",
+    "LabResultHistory",
+    "LabResultStatus",
+    "TrendAnalysis",
+    "LabResultRepository",
 ]

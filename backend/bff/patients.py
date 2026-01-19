@@ -2,13 +2,409 @@
 API endpoints for managing patients
 '''
 
-from fastapi import APIRouter, HTTPException, Path, Depends
+from datetime import datetime, timedelta
+from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel
 
 from bff import dependencies
 
 
 router = APIRouter(prefix='/patients', tags=['patients'])
+
+
+def get_mock_recent_labs():
+    """Return mock lab data for demonstration with trend indicators and data completeness."""
+    today = datetime.now()
+
+    return {
+        "panels": [
+            {
+                "id": "panel-1",
+                "panelName": "Basic Metabolic Panel",
+                "collectionDate": (today - timedelta(days=1)).isoformat(),
+                "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                "results": [
+                    {
+                        "id": "lab-1",
+                        "testName": "Glucose",
+                        "value": "98",
+                        "unit": "mg/dL",
+                        "referenceRange": "70-100",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat(),
+                        "previousValue": {
+                            "value": "110",
+                            "collectionDate": (today - timedelta(days=90)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-2",
+                        "testName": "BUN",
+                        "value": "18",
+                        "unit": "mg/dL",
+                        "referenceRange": "7-20",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat(),
+                        "previousValue": {
+                            "value": "17",
+                            "collectionDate": (today - timedelta(days=90)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-3",
+                        "testName": "Creatinine",
+                        "value": "1.4",
+                        "unit": "mg/dL",
+                        "referenceRange": "0.7-1.3",
+                        "status": "abnormal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat(),
+                        "previousValue": {
+                            "value": "1.1",
+                            "collectionDate": (today - timedelta(days=90)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-4",
+                        "testName": "Sodium",
+                        "value": "140",
+                        "unit": "mEq/L",
+                        "referenceRange": "136-145",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat(),
+                        "previousValue": {
+                            "value": "139",
+                            "collectionDate": (today - timedelta(days=90)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-5",
+                        "testName": "Potassium",
+                        "value": "5.8",
+                        "unit": "mEq/L",
+                        "referenceRange": "3.5-5.0",
+                        "status": "critical",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": False,
+                        "acknowledgedBy": None,
+                        "acknowledgedAt": None,
+                        "previousValue": {
+                            "value": "4.5",
+                            "collectionDate": (today - timedelta(days=90)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-6",
+                        "testName": "Chloride",
+                        "value": "102",
+                        "unit": "mEq/L",
+                        "referenceRange": "98-106",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat()
+                    },
+                    {
+                        "id": "lab-7",
+                        "testName": "CO2",
+                        "value": "24",
+                        "unit": "mEq/L",
+                        "referenceRange": "23-29",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=1)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(hours=20)).isoformat()
+                    }
+                ]
+            },
+            {
+                "id": "panel-2",
+                "panelName": "Lipid Panel",
+                "collectionDate": (today - timedelta(days=45)).isoformat(),
+                "lastUpdated": (today - timedelta(days=44)).isoformat(),
+                "results": [
+                    {
+                        "id": "lab-8",
+                        "testName": "Total Cholesterol",
+                        "value": "210",
+                        "unit": "mg/dL",
+                        "referenceRange": "<200",
+                        "status": "abnormal",
+                        "collectionDate": (today - timedelta(days=45)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=44)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-jones",
+                        "acknowledgedAt": (today - timedelta(days=44)).isoformat(),
+                        "previousValue": {
+                            "value": "225",
+                            "collectionDate": (today - timedelta(days=180)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-9",
+                        "testName": "HDL",
+                        "value": "55",
+                        "unit": "mg/dL",
+                        "referenceRange": ">40",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=45)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=44)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-jones",
+                        "acknowledgedAt": (today - timedelta(days=44)).isoformat(),
+                        "previousValue": {
+                            "value": "48",
+                            "collectionDate": (today - timedelta(days=180)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-10",
+                        "testName": "LDL",
+                        "value": "135",
+                        "unit": "mg/dL",
+                        "referenceRange": "<100",
+                        "status": "abnormal",
+                        "collectionDate": (today - timedelta(days=45)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=44)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-jones",
+                        "acknowledgedAt": (today - timedelta(days=44)).isoformat(),
+                        "previousValue": {
+                            "value": "125",
+                            "collectionDate": (today - timedelta(days=180)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-11",
+                        "testName": "Triglycerides",
+                        "value": "150",
+                        "unit": "mg/dL",
+                        "referenceRange": "<150",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=45)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=44)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-jones",
+                        "acknowledgedAt": (today - timedelta(days=44)).isoformat(),
+                        "previousValue": {
+                            "value": "165",
+                            "collectionDate": (today - timedelta(days=180)).isoformat()
+                        }
+                    }
+                ]
+            },
+            {
+                "id": "panel-3",
+                "panelName": "Complete Blood Count",
+                "collectionDate": (today - timedelta(days=60)).isoformat(),
+                "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                "results": [
+                    {
+                        "id": "lab-12",
+                        "testName": "WBC",
+                        "value": "7.5",
+                        "unit": "K/uL",
+                        "referenceRange": "4.5-11.0",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=60)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(days=59)).isoformat(),
+                        "previousValue": {
+                            "value": "7.3",
+                            "collectionDate": (today - timedelta(days=200)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-13",
+                        "testName": "RBC",
+                        "value": "4.8",
+                        "unit": "M/uL",
+                        "referenceRange": "4.5-5.5",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=60)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(days=59)).isoformat()
+                    },
+                    {
+                        "id": "lab-14",
+                        "testName": "Hemoglobin",
+                        "value": "14.2",
+                        "unit": "g/dL",
+                        "referenceRange": "13.5-17.5",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=60)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(days=59)).isoformat(),
+                        "previousValue": {
+                            "value": "13.8",
+                            "collectionDate": (today - timedelta(days=200)).isoformat()
+                        }
+                    },
+                    {
+                        "id": "lab-15",
+                        "testName": "Hematocrit",
+                        "value": "42",
+                        "unit": "%",
+                        "referenceRange": "38-50",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=60)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(days=59)).isoformat()
+                    },
+                    {
+                        "id": "lab-16",
+                        "testName": "Platelets",
+                        "value": "250",
+                        "unit": "K/uL",
+                        "referenceRange": "150-400",
+                        "status": "normal",
+                        "collectionDate": (today - timedelta(days=60)).isoformat(),
+                        "lastUpdated": (today - timedelta(days=59)).isoformat(),
+                        "acknowledged": True,
+                        "acknowledgedBy": "dr-smith",
+                        "acknowledgedAt": (today - timedelta(days=59)).isoformat()
+                    }
+                ]
+            },
+            {
+                "id": "panel-pending-1",
+                "panelName": "Thyroid Panel",
+                "collectionDate": (today - timedelta(hours=4)).isoformat(),
+                "lastUpdated": (today - timedelta(hours=2)).isoformat(),
+                "results": [
+                    {
+                        "id": "lab-pending-1",
+                        "testName": "TSH",
+                        "value": "",
+                        "unit": "mIU/L",
+                        "referenceRange": "0.4-4.0",
+                        "status": "in_progress",
+                        "collectionDate": (today - timedelta(hours=4)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=2)).isoformat(),
+                        "acknowledged": False,
+                        "acknowledgedBy": None,
+                        "acknowledgedAt": None
+                    },
+                    {
+                        "id": "lab-pending-2",
+                        "testName": "Free T4",
+                        "value": "",
+                        "unit": "ng/dL",
+                        "referenceRange": "0.8-1.8",
+                        "status": "in_progress",
+                        "collectionDate": (today - timedelta(hours=4)).isoformat(),
+                        "lastUpdated": (today - timedelta(hours=2)).isoformat(),
+                        "acknowledged": False,
+                        "acknowledgedBy": None,
+                        "acknowledgedAt": None
+                    }
+                ]
+            }
+        ],
+        "ungroupedResults": [
+            {
+                "id": "lab-17",
+                "testName": "HbA1c",
+                "value": "6.8",
+                "unit": "%",
+                "referenceRange": "<5.7",
+                "status": "abnormal",
+                "collectionDate": (today - timedelta(days=30)).isoformat(),
+                "lastUpdated": (today - timedelta(days=29)).isoformat(),
+                "acknowledged": True,
+                "acknowledgedBy": "dr-smith",
+                "acknowledgedAt": (today - timedelta(days=29)).isoformat(),
+                "previousValue": {
+                    "value": "6.2",
+                    "collectionDate": (today - timedelta(days=120)).isoformat()
+                }
+            },
+            {
+                "id": "lab-19",
+                "testName": "Vitamin D, 25-Hydroxy",
+                "value": "28",
+                "unit": "ng/mL",
+                "referenceRange": "30-100",
+                "status": "abnormal",
+                "collectionDate": (today - timedelta(days=120)).isoformat(),
+                "lastUpdated": (today - timedelta(days=119)).isoformat(),
+                "acknowledged": True,
+                "acknowledgedBy": "dr-jones",
+                "acknowledgedAt": (today - timedelta(days=118)).isoformat()
+            },
+            {
+                "id": "lab-20",
+                "testName": "eGFR",
+                "value": "65",
+                "unit": "mL/min/1.73m²",
+                "referenceRange": ">60",
+                "status": "normal",
+                "collectionDate": (today - timedelta(days=1)).isoformat(),
+                "lastUpdated": (today - timedelta(hours=22)).isoformat(),
+                "acknowledged": True,
+                "acknowledgedBy": "dr-smith",
+                "acknowledgedAt": (today - timedelta(hours=20)).isoformat(),
+                "previousValue": {
+                    "value": "72",
+                    "collectionDate": (today - timedelta(days=90)).isoformat()
+                }
+            },
+            {
+                "id": "lab-critical-1",
+                "testName": "Troponin I",
+                "value": "0.85",
+                "unit": "ng/mL",
+                "referenceRange": "<0.04",
+                "status": "critical",
+                "collectionDate": (today - timedelta(hours=2)).isoformat(),
+                "lastUpdated": (today - timedelta(hours=1)).isoformat(),
+                "acknowledged": False,
+                "acknowledgedBy": None,
+                "acknowledgedAt": None
+            },
+            {
+                "id": "lab-pending-3",
+                "testName": "Urinalysis",
+                "value": "",
+                "unit": "",
+                "referenceRange": "",
+                "status": "pending",
+                "collectionDate": (today - timedelta(hours=6)).isoformat(),
+                "lastUpdated": (today - timedelta(hours=6)).isoformat(),
+                "acknowledged": False,
+                "acknowledgedBy": None,
+                "acknowledgedAt": None
+            }
+        ]
+    }
 
 
 @router.get("/")
@@ -49,6 +445,43 @@ async def get_patient(patient_id: str = Path(..., description="The patient ID"))
             "reason": next_appt.reason or next_appt.visit_type,
         }
 
+    # Add mock recent labs
+    result["recentLabs"] = get_mock_recent_labs()
+
     return result
+
+
+@router.get("/{patient_id}/labs/{test_name}/history")
+async def get_lab_history(
+    patient_id: str = Path(..., description="The patient ID"),
+    test_name: str = Path(..., description="The lab test name"),
+    days_back: int = Query(365, ge=1, le=3650, description="Number of days of history to retrieve"),
+):
+    """
+    Get historical lab results for a specific test.
+
+    Returns history entries and trend analysis for the specified test.
+    """
+    # Verify patient exists
+    patient_repo = dependencies.get_patient_repo()
+    patient = await patient_repo.get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Get lab history
+    lab_history_service = dependencies.get_lab_history_service()
+    history_response = await lab_history_service.get_lab_history(
+        patient_id=patient_id,
+        test_name=test_name,
+        days_back=days_back,
+    )
+
+    if not history_response:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No lab history found for test '{test_name}'"
+        )
+
+    return history_response.to_dict()
 
 
