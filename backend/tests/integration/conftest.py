@@ -31,6 +31,8 @@ from bff.dependencies import (
     get_scheduling_service,
     get_medication_search_service,
     get_lab_history_service,
+    get_problem_list_service,
+    get_problem_detail_service,
 )
 
 
@@ -97,6 +99,8 @@ def services():
         "scheduling": get_scheduling_service(),
         "medication_search": get_medication_search_service(),
         "lab_history": get_lab_history_service(),
+        "problem_list": get_problem_list_service(),
+        "problem_detail": get_problem_detail_service(),
     }
 
 

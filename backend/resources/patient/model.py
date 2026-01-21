@@ -21,11 +21,180 @@ from resources.core import (
 )
 
 
+from enum import Enum
+
+
+class ProblemStatus(str, Enum):
+    """Clinical status of a problem."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    RESOLVED = "resolved"
+    RULE_OUT = "rule_out"  # Suspected diagnosis being evaluated
+
+
+class ProblemPriority(str, Enum):
+    """Clinical priority for sorting problems."""
+    CHRONIC = "chronic"  # Ongoing conditions requiring management
+    ACUTE = "acute"      # Current active issues
+    INACTIVE = "inactive"
+    RESOLVED = "resolved"
+
+
+class ProblemSeverity(str, Enum):
+    """Severity/acuity of a problem."""
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+    WELL_CONTROLLED = "well_controlled"
+
+
+class ClinicalCategory(str, Enum):
+    """Clinical categories for problem grouping."""
+    CARDIOVASCULAR = "cardiovascular"
+    ENDOCRINE = "endocrine"
+    RESPIRATORY = "respiratory"
+    MUSCULOSKELETAL = "musculoskeletal"
+    NEUROLOGICAL = "neurological"
+    GASTROINTESTINAL = "gastrointestinal"
+    PSYCHIATRIC = "psychiatric"
+    INFECTIOUS = "infectious"
+    ONCOLOGY = "oncology"
+    RENAL = "renal"
+    DERMATOLOGICAL = "dermatological"
+    OTHER = "other"
+
+
+class ProblemComplexity(str, Enum):
+    """Complexity indicators for problems."""
+    SIMPLE = "simple"  # Basic condition without complications
+    WITH_COMPLICATIONS = "with_complications"  # Has related complications
+    CONTROLLED = "controlled"  # Chronic condition well managed
+    UNCONTROLLED = "uncontrolled"  # Chronic condition not well managed
+    PROGRESSIVE = "progressive"  # Worsening over time
+
+
+@dataclass
+class RelatedVisit:
+    """Reference to a visit that addressed this problem."""
+    visit_id: str
+    date: date
+    visit_type: str
+    provider_name: str | None = None
+
+
+@dataclass
+class RelatedMedication:
+    """Reference to a medication linked to this problem."""
+    medication_id: str
+    name: str
+    dosage: str | None = None
+
+
+@dataclass
+class RelatedLabResult:
+    """Reference to a lab result linked to this problem."""
+    lab_name: str
+    most_recent_value: str | None = None
+    most_recent_date: date | None = None
+    status: str | None = None  # normal, abnormal, critical
+
+
 @dataclass
 class Problem:
     """A clinical problem/condition for the patient."""
     name: str
-    diagnosed_year: int
+    icd10_code: str
+    onset_date: date
+    status: ProblemStatus = ProblemStatus.ACTIVE
+    priority: ProblemPriority = ProblemPriority.CHRONIC
+    severity: ProblemSeverity | None = None
+    documenting_provider: str | None = None
+    documented_date: date | None = None
+    is_critical: bool = False  # Life-threatening conditions (cancer, severe heart disease, etc.)
+    # Resolution tracking fields
+    resolved_date: date | None = None  # Date problem was marked resolved
+    resolved_by_provider: str | None = None  # Provider who marked it resolved
+    # Clinical context fields
+    clinical_category: ClinicalCategory | None = None
+    complexity: ProblemComplexity | None = None
+    parent_problem_code: str | None = None  # ICD-10 code of parent problem (for complications)
+    related_visits: list[RelatedVisit] | None = None
+    related_medications: list[RelatedMedication] | None = None
+    related_labs: list[RelatedLabResult] | None = None
+
+    @property
+    def is_new(self) -> bool:
+        """Check if problem was documented within last 30 days."""
+        if not self.documented_date:
+            return False
+        days_since_documented = (date.today() - self.documented_date).days
+        return days_since_documented <= 30
+
+    @property
+    def is_rule_out(self) -> bool:
+        """Check if this is a rule-out/suspected diagnosis."""
+        return self.status == ProblemStatus.RULE_OUT
+
+    def to_bff_dict(self) -> dict:
+        """Convert to BFF-friendly format."""
+        result = {
+            "name": self.name,
+            "icd10Code": self.icd10_code,
+            "onsetDate": self.onset_date.isoformat() if self.onset_date else None,
+            "status": self.status.value,
+            "priority": self.priority.value,
+            "isCritical": self.is_critical,
+            "isNew": self.is_new,
+            "isRuleOut": self.is_rule_out,
+        }
+        if self.severity:
+            result["severity"] = self.severity.value
+        if self.documenting_provider:
+            result["documentingProvider"] = self.documenting_provider
+        if self.documented_date:
+            result["documentedDate"] = self.documented_date.isoformat()
+        # Resolution tracking fields
+        if self.resolved_date:
+            result["resolvedDate"] = self.resolved_date.isoformat()
+        if self.resolved_by_provider:
+            result["resolvedByProvider"] = self.resolved_by_provider
+        # Clinical context fields
+        if self.clinical_category:
+            result["clinicalCategory"] = self.clinical_category.value
+        if self.complexity:
+            result["complexity"] = self.complexity.value
+        if self.parent_problem_code:
+            result["parentProblemCode"] = self.parent_problem_code
+        if self.related_visits:
+            result["relatedVisits"] = [
+                {
+                    "visitId": v.visit_id,
+                    "date": v.date.isoformat() if v.date else None,
+                    "visitType": v.visit_type,
+                    "providerName": v.provider_name,
+                }
+                for v in self.related_visits
+            ]
+        if self.related_medications:
+            result["relatedMedications"] = [
+                {
+                    "medicationId": m.medication_id,
+                    "name": m.name,
+                    "dosage": m.dosage,
+                }
+                for m in self.related_medications
+            ]
+        if self.related_labs:
+            result["relatedLabs"] = [
+                {
+                    "labName": lab.lab_name,
+                    "mostRecentValue": lab.most_recent_value,
+                    "mostRecentDate": lab.most_recent_date.isoformat() if lab.most_recent_date else None,
+                    "status": lab.status,
+                }
+                for lab in self.related_labs
+            ]
+        return result
 
 
 @dataclass
@@ -154,10 +323,7 @@ class Patient(DomainResource):
             }
 
         if self.problem_list:
-            result["problemList"] = [
-                {"name": p.name, "diagnosedYear": p.diagnosed_year}
-                for p in self.problem_list
-            ]
+            result["problemList"] = [p.to_bff_dict() for p in self.problem_list]
 
         if self.recent_vitals:
             result["recentVitals"] = {

@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection, RecentLabsSection, VisitTimeline } from '../components/patient';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
-import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication } from '../types';
+import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -270,6 +270,12 @@ export function PatientChartPage() {
   const [medicationSortBy, setMedicationSortBy] = useState<'name' | 'started' | 'drugClass'>('started');
   const [medicationFilter, setMedicationFilter] = useState('');
   const [isDiscontinuing, setIsDiscontinuing] = useState(false);
+
+  // Problem detail modal state
+  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+  const [problemDetail, setProblemDetail] = useState<ProblemDetailResponse | null>(null);
+  const [isLoadingProblemDetail, setIsLoadingProblemDetail] = useState(false);
+  const [problemDetailError, setProblemDetailError] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -671,6 +677,44 @@ export function PatientChartPage() {
     }
   };
 
+  const handleProblemClick = async (problem: Problem) => {
+    if (!patientId) return;
+
+    setSelectedProblem(problem);
+    setProblemDetail(null);
+    setProblemDetailError(null);
+    setIsLoadingProblemDetail(true);
+
+    try {
+      const detail = await getProblemDetail(patientId, problem.icd10Code);
+      setProblemDetail(detail);
+    } catch (error) {
+      console.error('Failed to fetch problem detail:', error);
+      setProblemDetailError('Failed to load problem details');
+    } finally {
+      setIsLoadingProblemDetail(false);
+    }
+  };
+
+  const handleCloseProblemDetail = () => {
+    setSelectedProblem(null);
+    setProblemDetail(null);
+    setProblemDetailError(null);
+  };
+
+  const handleReactivateProblem = async (icd10Code: string) => {
+    if (!patientId) return;
+
+    try {
+      // For now, using a hardcoded provider name - in a real app this would come from auth context
+      await reactivateProblem(patientId, icd10Code, 'Dr. Emily Chen');
+      // Refresh patient data to get updated problem list
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to reactivate problem:', error);
+    }
+  };
+
   const handleSubmitPrescription = async () => {
     if (!patientId || prescription.length === 0) return;
 
@@ -887,27 +931,7 @@ export function PatientChartPage() {
           </Card>
         );
       case 'problems':
-        return (
-          <Card>
-            <CardContent>
-              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
-                Problem List
-              </h3>
-              {patient.problemList && patient.problemList.length > 0 ? (
-                <ul className="space-y-2">
-                  {patient.problemList.map((problem, index) => (
-                    <li key={index} className="text-[15px] text-text-primary">
-                      <span className="text-text-tertiary mr-1">•</span>
-                      {problem.name} ({problem.diagnosedYear})
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[15px] text-text-secondary">No problems documented</p>
-              )}
-            </CardContent>
-          </Card>
-        );
+        return <ProblemListSection problemList={patient.problemList} onProblemClick={handleProblemClick} onReactivateProblem={handleReactivateProblem} />;
       case 'vitals':
         return (
           <Card>
@@ -1375,6 +1399,17 @@ export function PatientChartPage() {
           onClose={() => setSelectedActiveMedication(null)}
           onDiscontinue={handleDiscontinueMedication}
           isDiscontinuing={isDiscontinuing}
+        />
+      )}
+
+      {selectedProblem && (
+        <ProblemDetailModal
+          isOpen={true}
+          onClose={handleCloseProblemDetail}
+          problem={selectedProblem}
+          problemDetail={problemDetail}
+          isLoading={isLoadingProblemDetail}
+          error={problemDetailError}
         />
       )}
     </div>

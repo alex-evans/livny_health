@@ -7,3 +7,5 @@ export { LabFilters } from './LabFilters';
 export { VisitTimeline } from './VisitTimeline';
 export { VisitTimelineFilters } from './VisitTimelineFilters';
 export { DateJumpPicker } from './DateJumpPicker';
+export { ProblemListSection } from './ProblemListSection';
+export { ProblemDetailModal } from './ProblemDetailModal';

@@ -29,6 +29,9 @@ from services import (
     MedicationSearchService,
     LabHistoryService,
     VisitHistoryService,
+    ProblemListService,
+    ProblemClinicalContextService,
+    ProblemDetailService,
 )
 from services.data_seeder import seed_all
 
@@ -51,6 +54,9 @@ _scheduling_service: SchedulingService | None = None
 _medication_search_service: MedicationSearchService | None = None
 _lab_history_service: LabHistoryService | None = None
 _visit_history_service: VisitHistoryService | None = None
+_problem_list_service: ProblemListService | None = None
+_problem_clinical_context_service: ProblemClinicalContextService | None = None
+_problem_detail_service: ProblemDetailService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -177,6 +183,38 @@ def get_visit_history_service() -> VisitHistoryService:
             visit_note_repo=get_visit_note_repo(),
         )
     return _visit_history_service
+
+
+def get_problem_list_service() -> ProblemListService:
+    global _problem_list_service
+    if _problem_list_service is None:
+        _problem_list_service = ProblemListService(
+            patient_repo=get_patient_repo(),
+        )
+    return _problem_list_service
+
+
+def get_problem_clinical_context_service() -> ProblemClinicalContextService:
+    global _problem_clinical_context_service
+    if _problem_clinical_context_service is None:
+        _problem_clinical_context_service = ProblemClinicalContextService(
+            patient_repo=get_patient_repo(),
+            medication_repo=get_medication_request_repo(),
+            visit_note_repo=get_visit_note_repo(),
+            lab_result_repo=get_lab_result_repo(),
+        )
+    return _problem_clinical_context_service
+
+
+def get_problem_detail_service() -> ProblemDetailService:
+    global _problem_detail_service
+    if _problem_detail_service is None:
+        _problem_detail_service = ProblemDetailService(
+            patient_repo=get_patient_repo(),
+            medication_repo=get_medication_request_repo(),
+            visit_note_repo=get_visit_note_repo(),
+        )
+    return _problem_detail_service
 
 
 def ensure_data_seeded() -> None:

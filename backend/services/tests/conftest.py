@@ -19,6 +19,7 @@ from resources import (
     EncounterRepository,
     AppointmentRepository,
     VisitNoteRepository,
+    LabResultRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -26,6 +27,10 @@ from services import (
     SchedulingService,
     MedicationSearchService,
     VisitHistoryService,
+    LabHistoryService,
+    ProblemListService,
+    ProblemDetailService,
+    ProblemClinicalContextService,
 )
 from services.data_seeder import seed_all
 
@@ -50,6 +55,7 @@ def repositories():
     encounter_repo = EncounterRepository()
     appointment_repo = AppointmentRepository()
     visit_note_repo = VisitNoteRepository()
+    lab_result_repo = LabResultRepository()
 
     # Seed with test data
     seed_all(
@@ -71,6 +77,7 @@ def repositories():
         "encounter": encounter_repo,
         "appointment": appointment_repo,
         "visit_note": visit_note_repo,
+        "lab_result": lab_result_repo,
     }
 
 
@@ -116,5 +123,42 @@ def medication_search_service(repositories):
 def visit_history_service(repositories):
     """Create a VisitHistoryService for testing."""
     return VisitHistoryService(
+        visit_note_repo=repositories["visit_note"],
+    )
+
+
+@pytest.fixture
+def lab_history_service(repositories):
+    """Create a LabHistoryService for testing."""
+    return LabHistoryService(
+        lab_result_repo=repositories["lab_result"],
+    )
+
+
+@pytest.fixture
+def problem_list_service(repositories):
+    """Create a ProblemListService for testing."""
+    return ProblemListService(
+        patient_repo=repositories["patient"],
+    )
+
+
+@pytest.fixture
+def problem_clinical_context_service(repositories):
+    """Create a ProblemClinicalContextService for testing."""
+    return ProblemClinicalContextService(
+        patient_repo=repositories["patient"],
+        medication_repo=repositories["medication_request"],
+        visit_note_repo=repositories["visit_note"],
+        lab_result_repo=repositories["lab_result"],
+    )
+
+
+@pytest.fixture
+def problem_detail_service(repositories):
+    """Create a ProblemDetailService for testing."""
+    return ProblemDetailService(
+        patient_repo=repositories["patient"],
+        medication_repo=repositories["medication_request"],
         visit_note_repo=repositories["visit_note"],
     )

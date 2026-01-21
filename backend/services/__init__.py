@@ -37,6 +37,17 @@ from .visit_history import (
     VisitHistoryService,
     VisitHistoryResponse,
 )
+from .problem_list import (
+    ProblemListService,
+    ProblemListResponse,
+)
+from .problem_clinical_context import (
+    ProblemClinicalContextService,
+)
+from .problem_detail import (
+    ProblemDetailService,
+    ProblemDetailResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -66,4 +77,12 @@ __all__ = [
     # Visit History
     "VisitHistoryService",
     "VisitHistoryResponse",
+    # Problem List
+    "ProblemListService",
+    "ProblemListResponse",
+    # Problem Clinical Context
+    "ProblemClinicalContextService",
+    # Problem Detail
+    "ProblemDetailService",
+    "ProblemDetailResponse",
 ]

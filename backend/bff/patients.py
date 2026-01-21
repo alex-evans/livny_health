@@ -5,6 +5,7 @@ API endpoints for managing patients
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel
+from typing import Literal
 
 from bff import dependencies
 
@@ -545,6 +546,68 @@ async def get_visit_providers(
     return {"providers": providers}
 
 
+@router.get("/{patient_id}/problems/resolved")
+async def get_resolved_problems(
+    patient_id: str = Path(..., description="The patient ID"),
+):
+    """
+    Get all resolved problems for a patient.
+
+    Returns problems sorted by resolved date (most recently resolved first).
+    Useful for viewing historical problems that are no longer active.
+    """
+    # Verify patient exists
+    patient_repo = dependencies.get_patient_repo()
+    patient = await patient_repo.get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    problem_list_service = dependencies.get_problem_list_service()
+    resolved_problems = await problem_list_service.get_resolved_problems(patient_id)
+
+    return {
+        "problems": [p.to_bff_dict() for p in resolved_problems],
+        "count": len(resolved_problems),
+    }
+
+
+@router.get("/{patient_id}/problems/{icd10_code}")
+async def get_problem_detail(
+    patient_id: str = Path(..., description="The patient ID"),
+    icd10_code: str = Path(..., description="The ICD-10 code of the problem"),
+):
+    """
+    Get detailed information for a specific problem.
+
+    Returns:
+    - Problem details with all fields
+    - History timeline (onset, progression, visits, status changes)
+    - Treatment history with outcomes
+    - Last addressed date
+    - Current treatment
+    """
+    # Verify patient exists
+    patient_repo = dependencies.get_patient_repo()
+    patient = await patient_repo.get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Get problem detail
+    problem_detail_service = dependencies.get_problem_detail_service()
+    detail_response = await problem_detail_service.get_problem_detail(
+        patient_id=patient_id,
+        icd10_code=icd10_code,
+    )
+
+    if not detail_response:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Problem with ICD-10 code '{icd10_code}' not found"
+        )
+
+    return detail_response.to_dict()
+
+
 @router.get("/{patient_id}/labs/{test_name}/history")
 async def get_lab_history(
     patient_id: str = Path(..., description="The patient ID"),
@@ -579,3 +642,114 @@ async def get_lab_history(
     return history_response.to_dict()
 
 
+# Request models for problem status management
+class UpdateProblemStatusRequest(BaseModel):
+    """Request body for updating problem status."""
+    status: Literal["active", "inactive", "resolved", "rule_out"]
+    providerName: str
+
+
+class ResolveProblemRequest(BaseModel):
+    """Request body for resolving a problem."""
+    providerName: str
+
+
+class ReactivateProblemRequest(BaseModel):
+    """Request body for reactivating a problem."""
+    providerName: str
+
+
+@router.patch("/{patient_id}/problems/{icd10_code}/status")
+async def update_problem_status(
+    request: UpdateProblemStatusRequest,
+    patient_id: str = Path(..., description="The patient ID"),
+    icd10_code: str = Path(..., description="The ICD-10 code of the problem"),
+):
+    """
+    Update the status of a problem.
+
+    Supports changing status to active, inactive, resolved, or rule_out.
+    When marking as resolved, automatically sets resolved_date and resolved_by_provider.
+    When reactivating, clears the resolution fields.
+    """
+    from resources import ProblemStatus
+
+    # Map string status to enum
+    status_map = {
+        "active": ProblemStatus.ACTIVE,
+        "inactive": ProblemStatus.INACTIVE,
+        "resolved": ProblemStatus.RESOLVED,
+        "rule_out": ProblemStatus.RULE_OUT,
+    }
+    new_status = status_map[request.status]
+
+    problem_list_service = dependencies.get_problem_list_service()
+    updated_problem = await problem_list_service.update_problem_status(
+        patient_id=patient_id,
+        icd10_code=icd10_code,
+        new_status=new_status,
+        provider_name=request.providerName,
+    )
+
+    if not updated_problem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Problem with ICD-10 code '{icd10_code}' not found"
+        )
+
+    return updated_problem.to_bff_dict()
+
+
+@router.post("/{patient_id}/problems/{icd10_code}/resolve")
+async def resolve_problem(
+    request: ResolveProblemRequest,
+    patient_id: str = Path(..., description="The patient ID"),
+    icd10_code: str = Path(..., description="The ICD-10 code of the problem"),
+):
+    """
+    Mark a problem as resolved.
+
+    Sets status to RESOLVED and records the resolution date and provider.
+    """
+    problem_list_service = dependencies.get_problem_list_service()
+    updated_problem = await problem_list_service.resolve_problem(
+        patient_id=patient_id,
+        icd10_code=icd10_code,
+        provider_name=request.providerName,
+    )
+
+    if not updated_problem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Problem with ICD-10 code '{icd10_code}' not found"
+        )
+
+    return updated_problem.to_bff_dict()
+
+
+@router.post("/{patient_id}/problems/{icd10_code}/reactivate")
+async def reactivate_problem(
+    request: ReactivateProblemRequest,
+    patient_id: str = Path(..., description="The patient ID"),
+    icd10_code: str = Path(..., description="The ICD-10 code of the problem"),
+):
+    """
+    Reactivate a resolved or inactive problem.
+
+    Sets status back to ACTIVE and clears resolution tracking fields.
+    Useful when a previously resolved condition recurs.
+    """
+    problem_list_service = dependencies.get_problem_list_service()
+    updated_problem = await problem_list_service.reactivate_problem(
+        patient_id=patient_id,
+        icd10_code=icd10_code,
+        provider_name=request.providerName,
+    )
+
+    if not updated_problem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Problem with ICD-10 code '{icd10_code}' not found"
+        )
+
+    return updated_problem.to_bff_dict()

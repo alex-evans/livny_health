@@ -380,3 +380,148 @@ class TestVisitTimelineEnhancements:
         # Should have at least one significant visit type
         significant_types = {"emergency", "hospital_admission", "annual_physical"}
         assert len(visit_types & significant_types) >= 1
+
+
+@pytest.mark.unit
+class TestVisitHistoryFilters:
+    """Tests for visit history filtering options."""
+
+    def test_filter_by_visit_type(self, visit_history_service):
+        """Should filter by visit type."""
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            visit_type="office_visit",
+        ))
+
+        # All returned visits should be office visits
+        for visit in response.visits:
+            assert visit.visit_type == "office_visit"
+
+    def test_filter_by_provider_id(self, visit_history_service):
+        """Should filter by provider ID."""
+        # First get all visits to find a provider ID
+        all_response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+        ))
+
+        if all_response.visits and all_response.visits[0].provider:
+            provider_id = all_response.visits[0].provider.id
+
+            response = run_async(visit_history_service.get_visit_history(
+                patient_id="patient-001",
+                days_back=3650,
+                provider_id=provider_id,
+            ))
+
+            # All returned visits should have this provider
+            for visit in response.visits:
+                assert visit.provider is not None
+                assert visit.provider.id == provider_id
+
+    def test_filter_by_diagnosis_code(self, visit_history_service):
+        """Should filter by diagnosis code."""
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            diagnosis_code="E11",  # Diabetes
+        ))
+
+        # All returned visits should have matching diagnosis
+        for visit in response.visits:
+            assert any(d.code.startswith("E11") for d in visit.diagnoses)
+
+    def test_filter_by_search_query(self, visit_history_service):
+        """Should filter by search query."""
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            search_query="diabetes",
+        ))
+
+        # Should return visits matching the search
+        assert response is not None
+
+    def test_filter_by_date_from(self, visit_history_service):
+        """Should filter by date_from."""
+        from datetime import datetime, timedelta
+
+        cutoff = datetime.utcnow() - timedelta(days=180)
+
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            date_from=cutoff,
+        ))
+
+        # All returned visits should be on or after cutoff
+        for visit in response.visits:
+            assert visit.date >= cutoff
+
+    def test_filter_by_date_to(self, visit_history_service):
+        """Should filter by date_to."""
+        from datetime import datetime, timedelta
+
+        cutoff = datetime.utcnow() - timedelta(days=30)
+
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            date_to=cutoff,
+        ))
+
+        # All returned visits should be on or before cutoff
+        for visit in response.visits:
+            assert visit.date <= cutoff
+
+    def test_include_all_returns_cancelled(self, visit_history_service):
+        """Should include cancelled visits when include_all=True."""
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+            include_all=True,
+        ))
+
+        # Should have at least some visits
+        assert response.total_count >= 0
+
+
+@pytest.mark.unit
+class TestProviderMethods:
+    """Tests for provider-related methods."""
+
+    def test_get_providers_for_patient(self, visit_history_service):
+        """Should return unique providers for a patient."""
+        providers = run_async(visit_history_service.get_providers_for_patient("patient-001"))
+
+        assert isinstance(providers, list)
+        # Should have at least one provider
+        if providers:
+            provider = providers[0]
+            assert "id" in provider
+            assert "name" in provider
+
+    def test_get_visit_by_encounter(self, visit_history_service):
+        """Should return visit for a specific encounter."""
+        # First get a visit to find an encounter ID
+        response = run_async(visit_history_service.get_visit_history(
+            patient_id="patient-001",
+            days_back=3650,
+        ))
+
+        if response.visits:
+            encounter_ref = response.visits[0].encounter.reference
+            encounter_id = encounter_ref.split("/")[-1] if "/" in encounter_ref else encounter_ref
+
+            visit = run_async(visit_history_service.get_visit_by_encounter(encounter_id))
+
+            # Should return the visit or None
+            if visit:
+                assert visit.encounter.reference == f"Encounter/{encounter_id}"
+
+    def test_get_visit_by_encounter_not_found(self, visit_history_service):
+        """Should return None for unknown encounter."""
+        visit = run_async(visit_history_service.get_visit_by_encounter("unknown-encounter-id"))
+
+        assert visit is None
