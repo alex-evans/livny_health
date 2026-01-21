@@ -18,12 +18,14 @@ from resources import (
     MedicationRequestRepository,
     EncounterRepository,
     AppointmentRepository,
+    VisitNoteRepository,
 )
 from services import (
     ClinicalDecisionService,
     PrescribingService,
     SchedulingService,
     MedicationSearchService,
+    VisitHistoryService,
 )
 from services.data_seeder import seed_all
 
@@ -47,6 +49,7 @@ def repositories():
     medication_request_repo = MedicationRequestRepository()
     encounter_repo = EncounterRepository()
     appointment_repo = AppointmentRepository()
+    visit_note_repo = VisitNoteRepository()
 
     # Seed with test data
     seed_all(
@@ -56,6 +59,7 @@ def repositories():
         medication_request_repo=medication_request_repo,
         appointment_repo=appointment_repo,
         encounter_repo=encounter_repo,
+        visit_note_repo=visit_note_repo,
     )
 
     return {
@@ -66,6 +70,7 @@ def repositories():
         "medication_request": medication_request_repo,
         "encounter": encounter_repo,
         "appointment": appointment_repo,
+        "visit_note": visit_note_repo,
     }
 
 
@@ -104,4 +109,12 @@ def medication_search_service(repositories):
     """Create a MedicationSearchService for testing."""
     return MedicationSearchService(
         medication_repo=repositories["medication"],
+    )
+
+
+@pytest.fixture
+def visit_history_service(repositories):
+    """Create a VisitHistoryService for testing."""
+    return VisitHistoryService(
+        visit_note_repo=repositories["visit_note"],
     )

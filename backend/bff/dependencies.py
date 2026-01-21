@@ -20,6 +20,7 @@ from resources import (
     EncounterRepository,
     AppointmentRepository,
     LabResultRepository,
+    VisitNoteRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -27,6 +28,7 @@ from services import (
     SchedulingService,
     MedicationSearchService,
     LabHistoryService,
+    VisitHistoryService,
 )
 from services.data_seeder import seed_all
 
@@ -40,6 +42,7 @@ _medication_request_repo: MedicationRequestRepository | None = None
 _encounter_repo: EncounterRepository | None = None
 _appointment_repo: AppointmentRepository | None = None
 _lab_result_repo: LabResultRepository | None = None
+_visit_note_repo: VisitNoteRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -47,6 +50,7 @@ _prescribing_service: PrescribingService | None = None
 _scheduling_service: SchedulingService | None = None
 _medication_search_service: MedicationSearchService | None = None
 _lab_history_service: LabHistoryService | None = None
+_visit_history_service: VisitHistoryService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -159,6 +163,22 @@ def get_lab_history_service() -> LabHistoryService:
     return _lab_history_service
 
 
+def get_visit_note_repo() -> VisitNoteRepository:
+    global _visit_note_repo
+    if _visit_note_repo is None:
+        _visit_note_repo = VisitNoteRepository()
+    return _visit_note_repo
+
+
+def get_visit_history_service() -> VisitHistoryService:
+    global _visit_history_service
+    if _visit_history_service is None:
+        _visit_history_service = VisitHistoryService(
+            visit_note_repo=get_visit_note_repo(),
+        )
+    return _visit_history_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -170,5 +190,6 @@ def ensure_data_seeded() -> None:
             medication_request_repo=get_medication_request_repo(),
             appointment_repo=get_appointment_repo(),
             encounter_repo=get_encounter_repo(),
+            visit_note_repo=get_visit_note_repo(),
         )
         _data_seeded = True

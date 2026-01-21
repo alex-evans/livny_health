@@ -195,3 +195,108 @@ class TestGetPatientById:
             assert "phone" in detail, f"Patient {patient['id']} missing phone"
             assert "insurance" in detail, f"Patient {patient['id']} missing insurance"
 
+
+@pytest.mark.unit
+class TestGetVisitHistory:
+    """Tests for GET /patients/{patient_id}/visits endpoint"""
+
+    def test_get_visit_history_returns_200(self, client, mock_services):
+        """Should return 200 OK status for valid patient ID"""
+        response = client.get("/patients/patient-001/visits")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_visit_history_structure(self, client, mock_services):
+        """Response should have visits, totalCount, and hasMore"""
+        response = client.get("/patients/patient-001/visits")
+        data = response.json()
+
+        assert "visits" in data
+        assert "totalCount" in data
+        assert "hasMore" in data
+        assert isinstance(data["visits"], list)
+
+    def test_get_visit_history_returns_visits(self, client, mock_services):
+        """Should return visit history for patient"""
+        response = client.get("/patients/patient-001/visits")
+        data = response.json()
+
+        assert data["totalCount"] > 0
+        assert len(data["visits"]) > 0
+
+    def test_get_visit_history_visit_structure(self, client, mock_services):
+        """Each visit should have required fields"""
+        response = client.get("/patients/patient-001/visits")
+        visits = response.json()["visits"]
+
+        visit = visits[0]
+        assert "id" in visit
+        assert "date" in visit
+        assert "visitType" in visit
+        assert "status" in visit
+        assert "chiefComplaint" in visit
+        assert "diagnoses" in visit
+        assert "provider" in visit
+
+    def test_get_visit_history_includes_soap_note(self, client, mock_services):
+        """Visits should include SOAP notes when available"""
+        response = client.get("/patients/patient-001/visits")
+        visits = response.json()["visits"]
+
+        visits_with_soap = [v for v in visits if "soapNote" in v and v["soapNote"]]
+        assert len(visits_with_soap) > 0
+
+        soap = visits_with_soap[0]["soapNote"]
+        assert "subjective" in soap
+        assert "objective" in soap
+        assert "assessment" in soap
+        assert "plan" in soap
+
+    def test_get_visit_history_includes_vitals(self, client, mock_services):
+        """Visits should include vitals when available"""
+        response = client.get("/patients/patient-001/visits")
+        visits = response.json()["visits"]
+
+        visits_with_vitals = [v for v in visits if "vitals" in v and v["vitals"]]
+        assert len(visits_with_vitals) > 0
+
+    def test_get_visit_history_includes_medications(self, client, mock_services):
+        """Visits should include medications when available"""
+        response = client.get("/patients/patient-001/visits")
+        visits = response.json()["visits"]
+
+        visits_with_meds = [v for v in visits if "medications" in v and v["medications"]]
+        assert len(visits_with_meds) > 0
+
+        med = visits_with_meds[0]["medications"][0]
+        assert "name" in med
+        assert "dosage" in med
+        assert "action" in med
+
+    def test_get_visit_history_includes_orders(self, client, mock_services):
+        """Visits should include orders when available"""
+        response = client.get("/patients/patient-001/visits")
+        visits = response.json()["visits"]
+
+        visits_with_orders = [v for v in visits if "orders" in v and v["orders"]]
+        assert len(visits_with_orders) > 0
+
+        order = visits_with_orders[0]["orders"][0]
+        assert "name" in order
+        assert "orderType" in order
+        assert "status" in order
+
+    def test_get_visit_history_days_back_param(self, client, mock_services):
+        """Should respect days_back query parameter"""
+        response = client.get("/patients/patient-001/visits?days_back=30")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_visit_history_include_all_param(self, client, mock_services):
+        """Should respect include_all query parameter"""
+        response = client.get("/patients/patient-001/visits?include_all=true")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_visit_history_not_found(self, client, mock_services):
+        """Should return 404 for non-existent patient"""
+        response = client.get("/patients/unknown-patient/visits")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+

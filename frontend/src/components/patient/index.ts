@@ -4,3 +4,6 @@ export { RecentLabsSection } from './RecentLabsSection';
 export { LabTrendChart } from './LabTrendChart';
 export { LabHistoryModal } from './LabHistoryModal';
 export { LabFilters } from './LabFilters';
+export { VisitTimeline } from './VisitTimeline';
+export { VisitTimelineFilters } from './VisitTimelineFilters';
+export { DateJumpPicker } from './DateJumpPicker';

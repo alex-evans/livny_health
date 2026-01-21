@@ -30,6 +30,18 @@ from resources import (
     AppointmentFlag,
     AppointmentRepository,
     EncounterRepository,
+    VisitNote,
+    VisitNoteRepository,
+    SOAPNote,
+    VisitVitals,
+    VisitMedication,
+    VisitOrder,
+    VisitDiagnosis,
+    VisitProvider,
+    MedicationAction,
+    OrderType,
+    OrderStatus,
+    OrderPriority,
 )
 from resources.core import (
     HumanName,
@@ -797,6 +809,354 @@ def seed_appointments(repo: AppointmentRepository, patient_repo: PatientReposito
     repo._seed(appointments)
 
 
+def seed_visit_notes(repo: VisitNoteRepository) -> None:
+    """Seed visit note data with SOAP notes, vitals, medications, and orders."""
+    now = datetime.utcnow()
+
+    visit_notes = [
+        # Patient 001 - Sarah Johnson - Recent visits
+        VisitNote(
+            id="v1",
+            encounter=Reference.to("Encounter", "enc-001"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="annual_physical",  # Changed to annual_physical
+            status="completed",
+            date=now - timedelta(days=35),
+            chief_complaint="Annual wellness exam",
+            has_follow_up_required=True,
+            follow_up_summary="Schedule colonoscopy screening (due). Recheck HbA1c in 3 months.",
+            location="Livny Health Clinic - Main",
+            duration=45,
+            provider=VisitProvider(
+                id="provider-001",
+                name="Dr. Emily Chen",
+                role="Attending",
+                specialty="Internal Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="Z00.00", description="Encounter for general adult medical examination without abnormal findings", is_primary=True),
+                VisitDiagnosis(code="E11.9", description="Type 2 diabetes mellitus without complications", is_primary=False),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient presents for annual wellness exam. Reports feeling generally well. Denies chest pain, shortness of breath, or palpitations. Diabetes well-controlled with current regimen. Occasional mild headaches, relieved with acetaminophen. Sleep quality good, 7-8 hours nightly. No recent weight changes.",
+                objective="General: Well-appearing, no acute distress. HEENT: PERRLA, oropharynx clear. CV: RRR, no murmurs. Lungs: CTA bilaterally. Abdomen: Soft, non-tender, no organomegaly. Extremities: No edema, pulses 2+ bilaterally. Skin: No rashes or lesions. Neuro: A&O x3, cranial nerves intact.",
+                assessment="1. Type 2 diabetes mellitus - well controlled on current regimen\n2. Essential hypertension - at goal\n3. Hyperlipidemia - stable on statin therapy\n4. Health maintenance up to date",
+                plan="1. Continue current medications\n2. HbA1c in 3 months\n3. Lipid panel in 6 months\n4. Schedule colonoscopy (due for screening)\n5. Flu vaccine administered today\n6. Return in 6 months or sooner if concerns",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=132,
+                blood_pressure_diastolic=78,
+                heart_rate=72,
+                temperature=98.4,
+                temperature_unit="F",
+                weight=156,
+                weight_unit="lbs",
+                oxygen_saturation=98,
+                respiratory_rate=16,
+                recorded_at=now - timedelta(days=35),
+            ),
+            medications=[
+                VisitMedication(id="vm-1", name="Influenza Vaccine", dosage="0.5mL", frequency="once", action=MedicationAction.PRESCRIBED, route="IM", instructions="Administered left deltoid"),
+            ],
+            orders=[
+                VisitOrder(id="ord-1", order_type=OrderType.LAB, name="HbA1c", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=35), completed_at=now - timedelta(days=33), result="6.8%", priority=OrderPriority.ROUTINE),
+                VisitOrder(id="ord-2", order_type=OrderType.LAB, name="Lipid Panel", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=35), completed_at=now - timedelta(days=33), result="TC 210, LDL 135, HDL 55, TG 150", priority=OrderPriority.ROUTINE),
+                VisitOrder(id="ord-3", order_type=OrderType.REFERRAL, name="Colonoscopy - GI", status=OrderStatus.PENDING, ordered_at=now - timedelta(days=35), priority=OrderPriority.ROUTINE),
+            ],
+        ),
+        VisitNote(
+            id="v2",
+            encounter=Reference.to("Encounter", "enc-002"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="follow_up",
+            status="completed",
+            date=now - timedelta(days=90),
+            chief_complaint="Diabetes follow-up, medication review",
+            location="Livny Health Clinic - Main",
+            duration=30,
+            has_follow_up_required=True,
+            follow_up_summary="Recheck A1C in 3 months. Annual eye exam referral placed.",
+            provider=VisitProvider(
+                id="provider-001",
+                name="Dr. Emily Chen",
+                role="Attending",
+                specialty="Internal Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="E11.65", description="Type 2 diabetes mellitus with hyperglycemia", is_primary=True),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient returns for diabetes follow-up. Reports good compliance with metformin. Checking blood sugars 2-3x weekly, fasting readings 110-130. No hypoglycemic episodes. Denies polyuria, polydipsia, or blurred vision. Diet adherence fair - admits to occasional sweets.",
+                objective="General: NAD. Weight stable. CV: RRR. Extremities: No ulcers, sensation intact to monofilament bilateral feet. Skin: No concerning lesions.",
+                assessment="Type 2 DM with recent hyperglycemia, improving with lifestyle modifications. A1C elevated at 7.2% (down from 7.8%).",
+                plan="1. Continue metformin 500mg BID\n2. Reinforce dietary counseling - limit simple carbohydrates\n3. Increase home glucose monitoring to daily fasting\n4. Recheck A1C in 3 months\n5. Annual eye exam due - referral placed\n6. Follow up in 3 months",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=138,
+                blood_pressure_diastolic=82,
+                heart_rate=76,
+                temperature=98.6,
+                weight=158,
+                weight_unit="lbs",
+                oxygen_saturation=97,
+                recorded_at=now - timedelta(days=90),
+            ),
+            orders=[
+                VisitOrder(id="ord-4", order_type=OrderType.LAB, name="HbA1c", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=90), completed_at=now - timedelta(days=88), result="7.2%", priority=OrderPriority.ROUTINE),
+                VisitOrder(id="ord-5", order_type=OrderType.REFERRAL, name="Ophthalmology - Diabetic Eye Exam", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=90), completed_at=now - timedelta(days=60), result="No diabetic retinopathy", priority=OrderPriority.ROUTINE),
+            ],
+        ),
+        VisitNote(
+            id="v3",
+            encounter=Reference.to("Encounter", "enc-003"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="urgent_care",
+            status="completed",
+            date=now - timedelta(days=130),
+            chief_complaint="Acute sinusitis symptoms x 5 days",
+            location="Livny Health Urgent Care",
+            duration=20,
+            provider=VisitProvider(
+                id="provider-002",
+                name="Dr. Michael Torres",
+                role="Attending",
+                specialty="Family Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="J01.90", description="Acute sinusitis, unspecified", is_primary=True),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient presents with 5-day history of nasal congestion, facial pressure/pain over maxillary sinuses bilaterally, thick yellow-green nasal discharge, and low-grade fever (100.2°F at home). Tried OTC decongestants with minimal relief. Denies severe headache, vision changes, or neck stiffness. Has known penicillin allergy (anaphylaxis).",
+                objective="T 99.8°F. General: Mild distress due to congestion. HEENT: Tenderness to palpation over maxillary sinuses bilaterally, nasal mucosa erythematous with purulent discharge, posterior pharynx with postnasal drip, TMs clear. Lungs: CTA. No lymphadenopathy.",
+                assessment="Acute bacterial sinusitis, likely secondary to viral URI. Patient has penicillin allergy precluding amoxicillin use.",
+                plan="1. Azithromycin 500mg day 1, then 250mg days 2-5 (Z-pack) - avoiding penicillin class due to allergy\n2. Nasal saline irrigation TID\n3. Sudafed 30mg q6h PRN congestion\n4. Increase fluid intake\n5. Return if worsening, high fever, or no improvement in 72 hours\n6. Follow up with PCP if symptoms persist beyond 10 days",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=128,
+                blood_pressure_diastolic=76,
+                heart_rate=84,
+                temperature=99.8,
+                weight=155,
+                weight_unit="lbs",
+                oxygen_saturation=98,
+                recorded_at=now - timedelta(days=130),
+            ),
+            medications=[
+                VisitMedication(id="vm-2", name="Azithromycin (Z-pack)", dosage="250mg", frequency="daily x 5 days", action=MedicationAction.PRESCRIBED, route="oral", instructions="500mg day 1, then 250mg days 2-5"),
+            ],
+            notes="Prescribed azithromycin due to penicillin allergy. Return if symptoms worsen.",
+        ),
+        VisitNote(
+            id="v4",
+            encounter=Reference.to("Encounter", "enc-004"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="telehealth",
+            status="completed",
+            date=now - timedelta(days=185),
+            chief_complaint="Blood pressure medication refill",
+            location=None,
+            duration=15,
+            provider=VisitProvider(
+                id="provider-001",
+                name="Dr. Emily Chen",
+                role="Attending",
+                specialty="Internal Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="I10", description="Essential (primary) hypertension", is_primary=True),
+            ],
+            soap_note=SOAPNote(
+                subjective="Telehealth visit for BP medication refill. Patient reports home BP readings averaging 130-135/80-85. Taking lisinopril 10mg daily as prescribed. No dizziness, cough, or swelling. No chest pain or shortness of breath.",
+                objective="Patient appears well via video. Alert and oriented. No visible distress. Patient reports home BP today 134/82.",
+                assessment="Essential hypertension, reasonably controlled on current regimen.",
+                plan="1. Continue lisinopril 10mg daily\n2. Refill authorized - 90-day supply with 3 refills\n3. Continue home BP monitoring\n4. Labs due at next in-person visit\n5. Follow up in 6 months or sooner if BP consistently elevated",
+            ),
+            medications=[
+                VisitMedication(id="vm-3", name="Lisinopril", dosage="10mg", frequency="daily", action=MedicationAction.CONTINUED, route="oral"),
+            ],
+        ),
+        VisitNote(
+            id="v5",
+            encounter=Reference.to("Encounter", "enc-005"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="lab_only",
+            status="completed",
+            date=now - timedelta(days=250),
+            chief_complaint="Routine lab work - HbA1c, lipid panel",
+            location="Livny Health Lab Services",
+            duration=10,
+            provider=VisitProvider(
+                id="lab-services",
+                name="Lab Services",
+                role="Laboratory",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="Z13.1", description="Encounter for screening for diabetes mellitus", is_primary=True),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient presents for scheduled lab work. Fasting since midnight. No acute complaints.",
+                objective="Venipuncture performed, left antecubital fossa. Hemostasis achieved.",
+                assessment="Lab draw completed without complication.",
+                plan="Results to be reviewed by PCP and communicated to patient.",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=130,
+                blood_pressure_diastolic=80,
+                heart_rate=70,
+                recorded_at=now - timedelta(days=250),
+            ),
+            orders=[
+                VisitOrder(id="ord-6", order_type=OrderType.LAB, name="HbA1c", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=250), completed_at=now - timedelta(days=249), result="7.8%", priority=OrderPriority.ROUTINE),
+                VisitOrder(id="ord-7", order_type=OrderType.LAB, name="Lipid Panel", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=250), completed_at=now - timedelta(days=249), result="TC 225, LDL 142, HDL 48, TG 165", priority=OrderPriority.ROUTINE),
+            ],
+        ),
+        VisitNote(
+            id="v6",
+            encounter=Reference.to("Encounter", "enc-006"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="office_visit",
+            status="completed",
+            date=now - timedelta(days=300),
+            chief_complaint="Follow-up hypertension, diabetes management",
+            location="Livny Health Clinic - Main",
+            duration=30,
+            has_critical_findings=True,
+            critical_findings_summary="BP significantly elevated at 148/92. Weight gain 4 lbs. Trace ankle edema. Started HCTZ.",
+            has_follow_up_required=True,
+            follow_up_summary="Follow up in 1 month to recheck BP. Labs in 2 weeks for electrolytes.",
+            provider=VisitProvider(
+                id="provider-001",
+                name="Dr. Emily Chen",
+                role="Attending",
+                specialty="Internal Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="I10", description="Essential (primary) hypertension", is_primary=True),
+                VisitDiagnosis(code="E11.9", description="Type 2 diabetes mellitus without complications", is_primary=False),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient here for chronic disease management. BP has been elevated at home, averaging 145/90. Some dietary indiscretions over holidays. Diabetes: checking sugars sporadically, fasting 130-150. No hypoglycemia. No chest pain, SOB, edema, or vision changes.",
+                objective="BP 148/92 (elevated). Weight up 4 lbs since last visit. CV: RRR, no murmurs. Lungs: Clear. Extremities: Trace bilateral ankle edema.",
+                assessment="1. Hypertension - suboptimally controlled\n2. Type 2 DM - fair control, needs reinforcement\n3. Weight gain - likely contributing to above",
+                plan="1. Add HCTZ 25mg daily for better BP control\n2. Continue metformin, lisinopril at current doses\n3. Dietary counseling - DASH diet handout provided\n4. Increase physical activity - goal 150 min/week\n5. Labs in 2 weeks to check electrolytes\n6. Follow up in 1 month",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=148,
+                blood_pressure_diastolic=92,
+                heart_rate=78,
+                temperature=98.4,
+                weight=160,
+                weight_unit="lbs",
+                oxygen_saturation=97,
+                recorded_at=now - timedelta(days=300),
+            ),
+            medications=[
+                VisitMedication(id="vm-4", name="Hydrochlorothiazide", dosage="25mg", frequency="daily", action=MedicationAction.PRESCRIBED, route="oral", instructions="Take in the morning"),
+            ],
+            orders=[
+                VisitOrder(id="ord-8", order_type=OrderType.LAB, name="BMP (Basic Metabolic Panel)", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=300), completed_at=now - timedelta(days=285), result="Na 140, K 4.2, Cr 0.9, all WNL", priority=OrderPriority.ROUTINE),
+            ],
+        ),
+        VisitNote(
+            id="v7",
+            encounter=Reference.to("Encounter", "enc-007"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="procedure",
+            status="completed",
+            date=now - timedelta(days=430),
+            chief_complaint="Colonoscopy - routine screening",
+            location="Livny Health Surgery Center",
+            duration=60,
+            has_critical_findings=True,
+            critical_findings_summary="Two tubular adenomas found and removed. Low-grade dysplasia. Requires surveillance colonoscopy in 5 years.",
+            has_follow_up_required=True,
+            follow_up_summary="Repeat colonoscopy in 5 years due to adenomatous polyps.",
+            provider=VisitProvider(
+                id="provider-004",
+                name="Dr. Sarah Kim",
+                role="Attending",
+                specialty="Gastroenterology",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="Z12.11", description="Encounter for screening for malignant neoplasm of colon", is_primary=True),
+                VisitDiagnosis(code="K63.5", description="Polyp of colon", is_primary=False),
+            ],
+            soap_note=SOAPNote(
+                subjective="Patient presents for routine screening colonoscopy. Age-appropriate screening. No family history of colon cancer. No recent GI symptoms, bleeding, or weight loss. Completed bowel prep without difficulty.",
+                objective="Procedure: Colonoscopy performed under moderate sedation (midazolam 3mg, fentanyl 75mcg). Scope advanced to cecum. Cecal landmarks identified. Two small sessile polyps (3mm and 4mm) identified in sigmoid colon and removed via cold snare polypectomy. No complications. Patient tolerated procedure well.",
+                assessment="1. Screening colonoscopy - complete to cecum\n2. Two small sigmoid polyps - removed, sent to pathology",
+                plan="1. Await pathology results (typically 5-7 days)\n2. If tubular adenomas: repeat colonoscopy in 5 years\n3. If hyperplastic only: repeat in 10 years\n4. Resume regular diet today\n5. No driving for 24 hours due to sedation\n6. Call if fever, severe pain, or bleeding",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=125,
+                blood_pressure_diastolic=75,
+                heart_rate=68,
+                oxygen_saturation=99,
+                recorded_at=now - timedelta(days=430),
+            ),
+            orders=[
+                VisitOrder(id="ord-9", order_type=OrderType.PROCEDURE, name="Colonoscopy with polypectomy", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=430), completed_at=now - timedelta(days=430), priority=OrderPriority.ROUTINE),
+                VisitOrder(id="ord-10", order_type=OrderType.LAB, name="Pathology - Colon polyps", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=430), completed_at=now - timedelta(days=423), result="Two tubular adenomas, low-grade dysplasia. Margins clear.", priority=OrderPriority.ROUTINE),
+            ],
+            notes="Two small polyps removed and sent to pathology. Recommend follow-up colonoscopy in 5 years.",
+        ),
+        VisitNote(
+            id="v8",
+            encounter=Reference.to("Encounter", "enc-008"),
+            subject=Reference.to("Patient", "patient-001"),
+            visit_type="emergency",
+            status="completed",
+            date=now - timedelta(days=530),
+            chief_complaint="Chest pain, shortness of breath",
+            location="Livny Health Emergency Department",
+            duration=180,
+            has_critical_findings=True,
+            critical_findings_summary="Chest pain with negative cardiac workup. Anxiety/panic attack likely. Follow up with PCP required.",
+            has_follow_up_required=True,
+            follow_up_summary="Follow up with PCP within 1 week. Consider outpatient cardiology referral if symptoms recur.",
+            provider=VisitProvider(
+                id="provider-005",
+                name="Dr. James Wilson",
+                role="Attending",
+                specialty="Emergency Medicine",
+            ),
+            diagnoses=[
+                VisitDiagnosis(code="R07.9", description="Chest pain, unspecified", is_primary=True),
+                VisitDiagnosis(code="R06.02", description="Shortness of breath", is_primary=False),
+                VisitDiagnosis(code="F41.9", description="Anxiety disorder, unspecified", is_primary=False),
+            ],
+            soap_note=SOAPNote(
+                subjective="45 y/o female presents to ED with acute onset chest tightness and shortness of breath x 2 hours. Describes pressure-like sensation across chest, non-radiating. Associated with palpitations and feeling of impending doom. Symptoms began while at work during stressful meeting. No prior cardiac history. Denies diaphoresis, nausea, or arm/jaw pain. History of occasional anxiety. No recent illness, travel, or immobilization.",
+                objective="T 98.2, HR 102, BP 145/88, RR 22, SpO2 98% RA. General: Anxious-appearing, mild distress. CV: Tachycardic, regular rhythm, no murmurs/rubs/gallops. Lungs: CTA bilaterally, no wheezes. Chest wall non-tender. Extremities: No edema, calves non-tender.\n\nEKG: Sinus tachycardia, no ST changes, no ischemic changes.\nTroponin: <0.01 (negative) x2 at 0h and 3h\nD-dimer: Normal\nCXR: No acute cardiopulmonary process\nBMP: Normal",
+                assessment="Chest pain with negative cardiac workup. Clinical presentation most consistent with acute anxiety/panic attack. Low suspicion for ACS given negative troponins, normal EKG, and atypical presentation. PE ruled out with normal D-dimer and low pretest probability.",
+                plan="1. Cardiac workup negative - reassurance provided\n2. Discussed anxiety as likely etiology\n3. Lorazepam 0.5mg given in ED with symptom resolution\n4. Discharge home in stable condition\n5. Follow up with PCP within 1 week\n6. Consider outpatient cardiology referral if symptoms recur\n7. Discussed stress management techniques\n8. Return precautions reviewed: return immediately if chest pain recurs, worsens, or associated with diaphoresis/radiation",
+            ),
+            vitals=VisitVitals(
+                blood_pressure_systolic=145,
+                blood_pressure_diastolic=88,
+                heart_rate=102,
+                temperature=98.2,
+                oxygen_saturation=98,
+                respiratory_rate=22,
+                recorded_at=now - timedelta(days=530),
+            ),
+            medications=[
+                VisitMedication(id="vm-5", name="Lorazepam", dosage="0.5mg", frequency="once", action=MedicationAction.PRESCRIBED, route="oral", instructions="Given in ED for acute anxiety"),
+            ],
+            orders=[
+                VisitOrder(id="ord-11", order_type=OrderType.LAB, name="Troponin I (serial)", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=530), completed_at=now - timedelta(days=530), result="<0.01 ng/mL (negative x2)", priority=OrderPriority.STAT),
+                VisitOrder(id="ord-12", order_type=OrderType.LAB, name="D-dimer", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=530), completed_at=now - timedelta(days=530), result="0.3 (normal <0.5)", priority=OrderPriority.STAT),
+                VisitOrder(id="ord-13", order_type=OrderType.LAB, name="BMP", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=530), completed_at=now - timedelta(days=530), result="All values within normal limits", priority=OrderPriority.STAT),
+                VisitOrder(id="ord-14", order_type=OrderType.IMAGING, name="Chest X-ray", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=530), completed_at=now - timedelta(days=530), result="No acute cardiopulmonary process", priority=OrderPriority.STAT),
+                VisitOrder(id="ord-15", order_type=OrderType.PROCEDURE, name="EKG", status=OrderStatus.COMPLETED, ordered_at=now - timedelta(days=530), completed_at=now - timedelta(days=530), result="Sinus tachycardia, no ischemic changes", priority=OrderPriority.STAT),
+            ],
+            notes="Cardiac workup negative. Symptoms attributed to anxiety/panic attack. Discharged with PCP follow-up.",
+        ),
+    ]
+
+    repo._seed(visit_notes)
+
+
 def seed_all(
     patient_repo: PatientRepository,
     practitioner_repo: PractitionerRepository,
@@ -804,6 +1164,7 @@ def seed_all(
     medication_request_repo: MedicationRequestRepository,
     appointment_repo: AppointmentRepository,
     encounter_repo: EncounterRepository,
+    visit_note_repo: VisitNoteRepository | None = None,
 ) -> None:
     """Seed all repositories with initial data."""
     seed_patients(patient_repo)
@@ -811,5 +1172,7 @@ def seed_all(
     seed_allergies(allergy_repo)
     seed_medication_requests(medication_request_repo)
     seed_appointments(appointment_repo, patient_repo)
+    if visit_note_repo:
+        seed_visit_notes(visit_note_repo)
     # Encounters are created dynamically when appointments are started
     print("[DATA SEEDER] All repositories seeded with initial data")
