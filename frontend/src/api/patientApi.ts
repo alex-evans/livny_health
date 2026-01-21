@@ -1,4 +1,4 @@
-import type { Patient, AllergyCheckResult, DrugInteractionCheckResult, LabHistoryResponse, VisitHistoryResponse, VisitHistoryParams, VisitProvidersResponse } from '../types';
+import type { Patient, AllergyCheckResult, DrugInteractionCheckResult, LabHistoryResponse, VisitHistoryResponse, VisitHistoryParams, VisitProvidersResponse, ProblemDetailResponse, Problem } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
 
@@ -171,6 +171,50 @@ export async function getLabHistory(
       throw new Error('Lab history not found');
     }
     throw new Error('Failed to fetch lab history');
+  }
+
+  return response.json();
+}
+
+export async function getProblemDetail(
+  patientId: string,
+  icd10Code: string
+): Promise<ProblemDetailResponse | null> {
+  const response = await fetch(
+    `${BFF_URL}/patients/${patientId}/problems/${encodeURIComponent(icd10Code)}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null;
+    }
+    throw new Error('Failed to fetch problem detail');
+  }
+
+  return response.json();
+}
+
+export async function reactivateProblem(
+  patientId: string,
+  icd10Code: string,
+  providerName: string
+): Promise<Problem> {
+  const response = await fetch(
+    `${BFF_URL}/patients/${patientId}/problems/${encodeURIComponent(icd10Code)}/reactivate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ providerName }),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Problem not found');
+    }
+    throw new Error('Failed to reactivate problem');
   }
 
   return response.json();

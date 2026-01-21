@@ -35,9 +35,108 @@ export interface NextAppointment {
   reason: string;
 }
 
+export type ProblemStatus = 'active' | 'inactive' | 'resolved' | 'rule_out';
+export type ProblemPriority = 'chronic' | 'acute' | 'inactive' | 'resolved';
+export type ProblemSeverity = 'mild' | 'moderate' | 'severe' | 'well_controlled';
+
+export type ClinicalCategory =
+  | 'cardiovascular'
+  | 'endocrine'
+  | 'respiratory'
+  | 'musculoskeletal'
+  | 'neurological'
+  | 'gastrointestinal'
+  | 'psychiatric'
+  | 'infectious'
+  | 'oncology'
+  | 'renal'
+  | 'dermatological'
+  | 'other';
+
+export type ProblemComplexity =
+  | 'simple'
+  | 'with_complications'
+  | 'controlled'
+  | 'uncontrolled'
+  | 'progressive';
+
+export interface RelatedVisit {
+  visitId: string;
+  date: string; // ISO date string
+  visitType: string;
+  providerName?: string | null;
+}
+
+export interface RelatedMedication {
+  medicationId: string;
+  name: string;
+  dosage?: string | null;
+}
+
+export interface RelatedLabResult {
+  labName: string;
+  mostRecentValue?: string | null;
+  mostRecentDate?: string | null; // ISO date string
+  status?: string | null; // normal, abnormal, critical
+}
+
 export interface Problem {
   name: string;
-  diagnosedYear: number;
+  icd10Code: string;
+  onsetDate: string; // ISO date string
+  status: ProblemStatus;
+  priority: ProblemPriority;
+  severity?: ProblemSeverity;
+  documentingProvider?: string;
+  documentedDate?: string; // ISO date string
+  isCritical: boolean; // Life-threatening conditions (cancer, severe heart disease, etc.)
+  isNew: boolean; // Documented within last 30 days
+  isRuleOut: boolean; // Under investigation / suspected diagnosis
+  // Resolution tracking fields
+  resolvedDate?: string; // ISO date string - when problem was marked resolved
+  resolvedByProvider?: string; // Provider who marked problem as resolved
+  // Clinical context fields
+  clinicalCategory?: ClinicalCategory;
+  complexity?: ProblemComplexity;
+  parentProblemCode?: string; // ICD-10 code of parent problem (for complications)
+  relatedVisits?: RelatedVisit[];
+  relatedMedications?: RelatedMedication[];
+  relatedLabs?: RelatedLabResult[];
+}
+
+export interface ProblemGroup {
+  category: ClinicalCategory;
+  categoryLabel: string;
+  problems: Problem[];
+}
+
+// Problem filtering and sorting types
+export type ProblemFilterStatus = 'all' | 'active' | 'chronic' | 'inactive' | 'resolved';
+export type ProblemSortOption = 'onset' | 'name' | 'lastUpdated';
+
+// Problem detail/history types
+export interface ProblemHistoryEntry {
+  date: string; // ISO date string
+  type: 'onset' | 'progression' | 'treatment' | 'status_change' | 'visit';
+  description: string;
+  provider?: string | null;
+  visitId?: string | null;
+}
+
+export interface ProblemTreatmentOutcome {
+  treatment: string;
+  startDate: string; // ISO date string
+  endDate?: string | null; // ISO date string
+  outcome: 'effective' | 'partially_effective' | 'ineffective' | 'ongoing';
+  notes?: string | null;
+}
+
+export interface ProblemDetailResponse {
+  problem: Problem;
+  historyTimeline: ProblemHistoryEntry[];
+  treatments: ProblemTreatmentOutcome[];
+  lastAddressed?: string | null; // ISO date string
+  currentTreatment?: string | null;
 }
 
 export interface RecentVitals {
