@@ -180,3 +180,134 @@ export interface LabHistoryResponse {
 export type LabSortOption = 'date' | 'name' | 'abnormal';
 export type LabFilterPanel = 'all' | 'BMP' | 'Lipid' | 'CBC' | 'ungrouped';
 export type LabFilterStatus = 'all' | 'abnormal' | 'critical';
+
+// Visit/Encounter Types
+export type EncounterType =
+  | 'office_visit'
+  | 'telehealth'
+  | 'urgent_care'
+  | 'emergency'
+  | 'hospital_admission'
+  | 'procedure'
+  | 'lab_only'
+  | 'follow_up'
+  | 'annual_physical';
+
+export type VisitStatus = 'completed' | 'in_progress' | 'scheduled' | 'cancelled' | 'no_show';
+
+export interface VisitDiagnosis {
+  code: string; // ICD-10 code
+  description: string;
+  isPrimary: boolean;
+}
+
+export interface VisitProvider {
+  id: string;
+  name: string;
+  role: string; // e.g., "Attending", "Resident", "NP", "PA"
+  specialty?: string;
+}
+
+// SOAP Note structure for clinical documentation
+export interface SOAPNote {
+  subjective: string; // Patient's description of symptoms, history
+  objective: string; // Physical exam findings, observations
+  assessment: string; // Clinical assessment/diagnosis
+  plan: string; // Treatment plan
+}
+
+// Vital signs recorded during a visit
+export interface VisitVitals {
+  bloodPressureSystolic?: number; // mmHg
+  bloodPressureDiastolic?: number; // mmHg
+  heartRate?: number; // bpm
+  temperature?: number; // Fahrenheit
+  temperatureUnit?: 'F' | 'C';
+  weight?: number; // lbs
+  weightUnit?: 'lbs' | 'kg';
+  oxygenSaturation?: number; // percentage
+  respiratoryRate?: number; // breaths per minute
+  recordedAt?: string; // ISO date string
+}
+
+// Medication prescribed or modified during a visit
+export interface VisitMedication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  route?: string; // oral, IV, topical, etc.
+  action: 'prescribed' | 'modified' | 'discontinued' | 'continued';
+  instructions?: string;
+}
+
+// Order types for labs, imaging, referrals
+export type OrderType = 'lab' | 'imaging' | 'referral' | 'procedure' | 'other';
+export type OrderStatus = 'ordered' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
+
+// Clinical order placed during a visit
+export interface VisitOrder {
+  id: string;
+  orderType: OrderType;
+  name: string; // e.g., "CBC", "Chest X-ray", "Cardiology consult"
+  status: OrderStatus;
+  orderedAt: string; // ISO date string
+  completedAt?: string; // ISO date string
+  result?: string; // Brief result summary if available
+  priority?: 'routine' | 'urgent' | 'stat';
+}
+
+export interface Visit {
+  id: string;
+  date: string; // ISO date string
+  visitType: EncounterType;
+  status: VisitStatus;
+  chiefComplaint: string;
+  diagnoses: VisitDiagnosis[];
+  provider: VisitProvider;
+  location?: string; // Facility or clinic name
+  duration?: number; // Visit duration in minutes
+  notes?: string; // Brief summary note (not full clinical note)
+  // Extended fields for note preview and expansion
+  soapNote?: SOAPNote; // Full SOAP note for expanded view
+  vitals?: VisitVitals; // Vital signs from this visit
+  medications?: VisitMedication[]; // Medications prescribed/modified
+  orders?: VisitOrder[]; // Labs, imaging, referrals ordered
+  // Timeline enhancement fields
+  hasCriticalFindings?: boolean; // Flag for visits with critical findings
+  criticalFindingsSummary?: string; // Brief description of critical findings
+  hasFollowUpRequired?: boolean; // Flag for visits requiring follow-up action
+  followUpSummary?: string; // Brief description of follow-up needed
+}
+
+export interface VisitHistoryResponse {
+  visits: Visit[];
+  totalCount: number;
+  hasMore: boolean;
+  offset: number;
+  limit: number;
+}
+
+export interface VisitHistoryParams {
+  daysBack?: number;
+  includeAll?: boolean;
+  limit?: number;
+  offset?: number;
+  visitType?: EncounterType;
+  providerId?: string;
+  diagnosisCode?: string;
+  searchQuery?: string;
+  dateFrom?: string; // ISO date string
+  dateTo?: string; // ISO date string
+}
+
+export interface VisitProviderOption {
+  id: string;
+  name: string;
+  role: string;
+  specialty?: string;
+}
+
+export interface VisitProvidersResponse {
+  providers: VisitProviderOption[];
+}

@@ -451,6 +451,100 @@ async def get_patient(patient_id: str = Path(..., description="The patient ID"))
     return result
 
 
+@router.get("/{patient_id}/visits")
+async def get_visit_history(
+    patient_id: str = Path(..., description="The patient ID"),
+    days_back: int = Query(365, ge=1, le=3650, description="Number of days of history to retrieve"),
+    include_all: bool = Query(False, description="Include cancelled and no-show visits"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of visits to return"),
+    offset: int = Query(0, ge=0, description="Number of visits to skip for pagination"),
+    visit_type: str | None = Query(None, description="Filter by visit type (e.g., office_visit, telehealth)"),
+    provider_id: str | None = Query(None, description="Filter by provider ID"),
+    diagnosis_code: str | None = Query(None, description="Filter by ICD-10 diagnosis code (partial match)"),
+    search_query: str | None = Query(None, description="Full-text search in SOAP notes, chief complaint, diagnoses"),
+    date_from: str | None = Query(None, description="Filter visits on or after this date (ISO format)"),
+    date_to: str | None = Query(None, description="Filter visits on or before this date (ISO format)"),
+):
+    """
+    Get visit history for a patient with SOAP notes, vitals, medications, and orders.
+
+    Supports filtering by:
+    - Visit type (office_visit, telehealth, urgent_care, etc.)
+    - Provider
+    - Diagnosis code (ICD-10, partial match supported)
+    - Full-text search across SOAP notes, chief complaint, and diagnoses
+    - Date range
+
+    Returns visit notes including:
+    - Chief complaint and diagnoses
+    - SOAP note (Subjective, Objective, Assessment, Plan)
+    - Vital signs recorded during the visit
+    - Medications prescribed or modified
+    - Orders placed (labs, imaging, referrals) with status
+    """
+    # Verify patient exists
+    patient_repo = dependencies.get_patient_repo()
+    patient = await patient_repo.get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Parse date filters
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from:
+        try:
+            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date_from format. Use ISO format.")
+
+    if date_to:
+        try:
+            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date_to format. Use ISO format.")
+
+    # Get visit history
+    visit_history_service = dependencies.get_visit_history_service()
+    history_response = await visit_history_service.get_visit_history(
+        patient_id=patient_id,
+        days_back=days_back,
+        include_all=include_all,
+        limit=limit,
+        offset=offset,
+        visit_type=visit_type,
+        provider_id=provider_id,
+        diagnosis_code=diagnosis_code,
+        search_query=search_query,
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+    )
+
+    return history_response.to_dict()
+
+
+@router.get("/{patient_id}/visits/providers")
+async def get_visit_providers(
+    patient_id: str = Path(..., description="The patient ID"),
+):
+    """
+    Get all unique providers who have treated a patient.
+
+    Returns a list of providers with their ID, name, role, and specialty.
+    Useful for populating provider filter dropdowns.
+    """
+    # Verify patient exists
+    patient_repo = dependencies.get_patient_repo()
+    patient = await patient_repo.get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Get providers
+    visit_history_service = dependencies.get_visit_history_service()
+    providers = await visit_history_service.get_providers_for_patient(patient_id)
+
+    return {"providers": providers}
+
+
 @router.get("/{patient_id}/labs/{test_name}/history")
 async def get_lab_history(
     patient_id: str = Path(..., description="The patient ID"),

@@ -33,6 +33,10 @@ from .lab_history import (
     LabHistoryService,
     LabHistoryResponse,
 )
+from .visit_history import (
+    VisitHistoryService,
+    VisitHistoryResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -59,4 +63,7 @@ __all__ = [
     # Lab History
     "LabHistoryService",
     "LabHistoryResponse",
+    # Visit History
+    "VisitHistoryService",
+    "VisitHistoryResponse",
 ]

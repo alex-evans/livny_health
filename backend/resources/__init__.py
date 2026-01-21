@@ -43,6 +43,20 @@ from .lab_result import (
     TrendAnalysis,
     LabResultRepository,
 )
+from .visit_note import (
+    VisitNote,
+    SOAPNote,
+    VisitVitals,
+    VisitMedication,
+    VisitOrder,
+    VisitDiagnosis,
+    VisitProvider,
+    MedicationAction,
+    OrderType,
+    OrderStatus,
+    OrderPriority,
+    VisitNoteRepository,
+)
 
 __all__ = [
     # Patient
@@ -89,4 +103,17 @@ __all__ = [
     "LabResultStatus",
     "TrendAnalysis",
     "LabResultRepository",
+    # VisitNote
+    "VisitNote",
+    "SOAPNote",
+    "VisitVitals",
+    "VisitMedication",
+    "VisitOrder",
+    "VisitDiagnosis",
+    "VisitProvider",
+    "MedicationAction",
+    "OrderType",
+    "OrderStatus",
+    "OrderPriority",
+    "VisitNoteRepository",
 ]
