@@ -52,6 +52,13 @@ from .imaging_service import (
     ImagingService,
     ImagingStudiesResponse,
 )
+from .vitals_service import (
+    VitalsService,
+    VitalsResponse,
+    VitalHistoryResponse,
+    CurrentVitalResponse,
+    BMIResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -92,4 +99,10 @@ __all__ = [
     # Imaging
     "ImagingService",
     "ImagingStudiesResponse",
+    # Vitals
+    "VitalsService",
+    "VitalsResponse",
+    "VitalHistoryResponse",
+    "CurrentVitalResponse",
+    "BMIResponse",
 ]

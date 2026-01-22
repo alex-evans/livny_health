@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection } from '../components/patient';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
@@ -935,36 +935,7 @@ export function PatientChartPage() {
       case 'imaging':
         return <ImagingSection patientId={patientId || ''} />;
       case 'vitals':
-        return (
-          <Card>
-            <CardContent>
-              <h3 className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-normal">
-                Vital Signs
-              </h3>
-              {patient.recentVitals ? (
-                <div className="space-y-normal">
-                  <p className="text-[13px] text-text-tertiary">Last recorded: {patient.recentVitals.date}</p>
-                  <div className="grid grid-cols-3 gap-normal">
-                    <div className="p-normal bg-arctic rounded-md">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-1">Blood Pressure</p>
-                      <p className="text-xl font-semibold text-deep-ice">{patient.recentVitals.bloodPressure}</p>
-                    </div>
-                    <div className="p-normal bg-arctic rounded-md">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-1">Weight</p>
-                      <p className="text-xl font-semibold text-deep-ice">{patient.recentVitals.weight}</p>
-                    </div>
-                    <div className="p-normal bg-arctic rounded-md">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary mb-1">Temperature</p>
-                      <p className="text-xl font-semibold text-deep-ice">{patient.recentVitals.temperature}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[15px] text-text-secondary">No vitals recorded</p>
-              )}
-            </CardContent>
-          </Card>
-        );
+        return <VitalSignsSection patientId={patientId || ''} />;
       case 'prescribe':
         return renderPrescribeSection();
       default:
