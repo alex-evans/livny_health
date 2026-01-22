@@ -54,6 +54,12 @@ from resources.core import (
     CodeableConcept,
     ContactPoint,
 )
+from resources import (
+    ImagingStudy,
+    ImagingStudyRepository,
+    RadiologyReport,
+    ComparisonStudy,
+)
 
 
 def seed_patients(repo: PatientRepository) -> None:
@@ -1388,6 +1394,337 @@ def seed_visit_notes(repo: VisitNoteRepository) -> None:
     repo._seed(visit_notes)
 
 
+def seed_imaging_studies(repo: ImagingStudyRepository) -> None:
+    """Seed imaging study data with realistic radiology reports."""
+    now = datetime.utcnow()
+
+    imaging_studies = [
+        # Patient 001 - Sarah Johnson - Multiple imaging studies
+        ImagingStudy(
+            id="img-001",
+            patient_id="patient-001",
+            accession_number="ACC-2024-001",
+            modality="CT",
+            body_part="Chest",
+            study_date=now - timedelta(days=45),
+            facility="Livny Health Imaging Center",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Robert Kim, MD",
+            indication="Cough and shortness of breath, rule out pneumonia",
+            series_count=3,
+            image_count=156,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="45-year-old female with persistent cough and shortness of breath for 2 weeks. Evaluate for pneumonia or other pulmonary pathology.",
+                technique="CT chest performed without IV contrast. Axial images obtained from lung apices through lung bases with 1.25mm slice thickness. Coronal and sagittal reformations performed.",
+                findings="LUNGS: No focal consolidation, mass, or nodule identified. Minimal bibasilar dependent atelectasis. No pleural effusion. Airways patent to subsegmental level.\n\nMEDIASTINUM: Heart size normal. No pericardial effusion. Mediastinal structures unremarkable. No significant lymphadenopathy.\n\nCHEST WALL: Unremarkable. No osseous lesion.",
+                impression="1. No evidence of pneumonia or acute cardiopulmonary disease.\n2. Minimal bibasilar atelectasis, likely positional.\n3. Recommend clinical correlation and follow-up as needed.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-002",
+            patient_id="patient-001",
+            accession_number="ACC-2024-002",
+            modality="XR",
+            body_part="Chest",
+            study_date=now - timedelta(days=90),
+            facility="Livny Health Clinic",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Sarah Chen, MD",
+            indication="Annual physical, baseline chest X-ray",
+            series_count=1,
+            image_count=2,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="39-year-old female, routine chest X-ray for annual physical examination.",
+                technique="PA and lateral chest radiographs obtained.",
+                findings="HEART: Normal size and configuration.\nLUNGS: Clear bilaterally. No focal consolidation, pleural effusion, or pneumothorax.\nMEDIASTINUM: Unremarkable.\nBONES: No acute osseous abnormality.",
+                impression="Normal chest radiograph. No acute cardiopulmonary disease.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-003",
+            patient_id="patient-001",
+            accession_number="ACC-2024-003",
+            modality="US",
+            body_part="Abdomen",
+            study_date=now - timedelta(days=120),
+            facility="Livny Health Imaging Center",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Maria Lopez, MD",
+            indication="Abdominal pain, evaluate gallbladder",
+            series_count=1,
+            image_count=24,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="Patient with intermittent right upper quadrant pain after meals. Evaluate for cholelithiasis.",
+                technique="Real-time grayscale and color Doppler ultrasound examination of the abdomen performed.",
+                findings="LIVER: Normal size, echogenicity, and echotexture. No focal hepatic lesion identified. Main portal vein is patent with normal hepatopetal flow.\n\nGALLBLADDER: Normal wall thickness. No gallstones or sludge. No pericholecystic fluid. Positive sonographic Murphy sign not elicited.\n\nBILE DUCTS: Common bile duct measures 4mm, within normal limits. No intrahepatic biliary ductal dilation.\n\nPANCREAS: Visualized portions unremarkable.\n\nKIDNEYS: Right kidney 10.2cm, left kidney 10.5cm. Normal cortical echogenicity bilaterally. No hydronephrosis or renal calculus.",
+                impression="1. No cholelithiasis or sonographic evidence of acute cholecystitis.\n2. Normal liver, kidneys, and visualized pancreas.\n3. Consider other etiologies for patient's symptoms.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-004",
+            patient_id="patient-001",
+            accession_number="ACC-2023-004",
+            modality="MAMMO",
+            body_part="Bilateral Breasts",
+            study_date=now - timedelta(days=180),
+            facility="Livny Health Women's Imaging",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Jennifer Park, MD",
+            indication="Annual screening mammography",
+            series_count=2,
+            image_count=4,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="39-year-old female for annual screening mammography. No breast symptoms or concerns.",
+                technique="Standard 2D digital mammographic views obtained including bilateral CC and MLO projections.",
+                findings="BREAST COMPOSITION: The breasts are heterogeneously dense, which may obscure small masses (ACR Category C).\n\nFINDINGS:\nRight breast: No suspicious masses, architectural distortion, or suspicious calcifications.\nLeft breast: No suspicious masses, architectural distortion, or suspicious calcifications.\n\nSKIN/NIPPLE: Normal bilaterally.\nAXILLAE: No suspicious lymph nodes.",
+                impression="BI-RADS Category 1: Negative.\nNo mammographic evidence of malignancy. Annual screening mammography recommended.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+
+        # Patient 004 - James Williams - Pain patient with multiple imaging
+        ImagingStudy(
+            id="img-005",
+            patient_id="patient-004",
+            accession_number="ACC-2024-005",
+            modality="MRI",
+            body_part="Lumbar Spine",
+            study_date=now - timedelta(days=30),
+            facility="Livny Health Imaging Center",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. David Martinez, MD",
+            indication="Chronic low back pain with radiculopathy, evaluate for disc herniation",
+            series_count=5,
+            image_count=245,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="56-year-old male with chronic low back pain radiating to bilateral lower extremities. History of lumbar spinal stenosis. Evaluate for disc herniation or progression.",
+                technique="MRI of the lumbar spine performed without IV contrast. Sequences include sagittal T1, sagittal T2, sagittal STIR, axial T1, and axial T2.",
+                findings="VERTEBRAL BODIES: Normal height and signal intensity. No compression fracture or marrow replacement lesion.\n\nDISCS:\nL3-L4: Mild disc desiccation. Mild broad-based disc bulge. Mild bilateral facet arthropathy. No significant central canal or foraminal stenosis.\n\nL4-L5: Moderate disc desiccation with loss of disc height. Broad-based disc bulge with superimposed left paracentral disc protrusion measuring 4mm. Moderate bilateral facet arthropathy with ligamentum flavum hypertrophy. Moderate central canal stenosis with AP diameter of 8mm. Moderate left and mild right neural foraminal stenosis.\n\nL5-S1: Mild disc desiccation. Mild broad-based disc bulge. Mild bilateral facet arthropathy. No significant stenosis.\n\nCONUS: Normal position and signal.\nPARAVERTEBRAL SOFT TISSUES: Unremarkable.",
+                impression="1. L4-L5: Left paracentral disc protrusion with moderate central canal stenosis and moderate left neural foraminal stenosis. This may account for patient's left-sided radicular symptoms.\n2. Multilevel degenerative changes as described.\n3. Recommend clinical correlation and neurosurgical consultation if symptoms persist.",
+                comparison_studies=[
+                    ComparisonStudy(
+                        study_id="img-old-001",
+                        date=now - timedelta(days=365),
+                        modality="MRI",
+                        body_part="Lumbar Spine",
+                    ),
+                ],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-006",
+            patient_id="patient-004",
+            accession_number="ACC-2024-006",
+            modality="XR",
+            body_part="Lumbar Spine",
+            study_date=now - timedelta(days=60),
+            facility="Livny Health Clinic",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Sarah Chen, MD",
+            indication="Chronic low back pain, evaluate alignment",
+            series_count=1,
+            image_count=3,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="56-year-old male with chronic low back pain. Evaluate for alignment and degenerative changes.",
+                technique="AP, lateral, and lateral flexion/extension views of the lumbar spine obtained.",
+                findings="ALIGNMENT: Mild lumbar lordosis. No spondylolisthesis on neutral or flexion/extension views.\nVERTEBRAL BODIES: Maintained height. Mild anterior osteophytes L3-L5.\nDISC SPACES: Mild narrowing at L4-L5.\nFACET JOINTS: Mild facet arthropathy L4-L5.\nSACROILIAC JOINTS: Unremarkable.\nSOFT TISSUES: Unremarkable.",
+                impression="1. Mild multilevel degenerative changes most prominent at L4-L5.\n2. No spondylolisthesis or acute osseous abnormality.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-007",
+            patient_id="patient-004",
+            accession_number="ACC-2024-007",
+            modality="CT",
+            body_part="Abdomen/Pelvis",
+            study_date=now - timedelta(days=14),
+            facility="Livny Health Imaging Center",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Robert Kim, MD",
+            indication="Elevated PSA, evaluate prostate",
+            series_count=2,
+            image_count=312,
+            has_images=True,
+            report_status="preliminary",
+            report=RadiologyReport(
+                clinical_indication="56-year-old male with elevated PSA (5.8 ng/mL). Evaluate for prostatic abnormality and staging if applicable.",
+                technique="CT abdomen and pelvis performed with IV and oral contrast. Arterial and portal venous phases obtained.",
+                findings="LIVER: Normal size and attenuation. No focal hepatic lesion.\nGALLBLADDER/BILE DUCTS: Unremarkable.\nPANCREAS: Normal.\nSPLEEN: Normal size.\nADRENAL GLANDS: Unremarkable.\nKIDNEYS: Normal enhancement bilaterally. No hydronephrosis or renal mass. 3mm non-obstructing left renal calculus.\nBLADDER: Normal distention. No mass.\nPROSTATE: Enlarged, measuring approximately 45cc. Heterogeneous enhancement. No definite focal mass, though CT is limited for prostate evaluation.\nLYMPH NODES: No pathologically enlarged pelvic or retroperitoneal lymph nodes.\nBOWEL: Normal.\nBONES: Degenerative changes as noted on prior lumbar imaging. No suspicious osseous lesion.",
+                impression="1. Benign prostatic enlargement. CT is limited for prostate evaluation; MRI of the prostate recommended for further characterization given elevated PSA.\n2. Small left renal calculus, non-obstructing.\n3. No lymphadenopathy or distant metastatic disease.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+
+        # Patient 006 - Robert Thompson - Cardiac patient
+        ImagingStudy(
+            id="img-008",
+            patient_id="patient-006",
+            accession_number="ACC-2024-008",
+            modality="XR",
+            body_part="Chest",
+            study_date=now - timedelta(days=7),
+            facility="Livny Health Emergency Department",
+            ordering_provider="Dr. James Wilson",
+            reading_radiologist="Dr. Sarah Chen, MD",
+            indication="Chest pain, shortness of breath",
+            series_count=1,
+            image_count=1,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="66-year-old male with known heart failure presenting with chest pain and shortness of breath. Evaluate for acute cardiopulmonary process.",
+                technique="Portable AP chest radiograph obtained.",
+                findings="HEART: Cardiomegaly, stable compared to prior.\nLUNGS: Mild pulmonary vascular congestion. No focal consolidation. Small bilateral pleural effusions, left greater than right.\nMEDIASTINUM: Widened mediastinum consistent with known cardiomegaly.\nBONES: Degenerative changes. Sternotomy wires intact (patient has history of CABG).",
+                impression="1. Mild pulmonary vascular congestion with small bilateral pleural effusions, consistent with mild heart failure decompensation.\n2. Cardiomegaly, stable.\n3. No pneumonia.",
+                comparison_studies=[
+                    ComparisonStudy(
+                        study_id="img-old-002",
+                        date=now - timedelta(days=90),
+                        modality="XR",
+                        body_part="Chest",
+                    ),
+                ],
+                critical_finding=False,
+            ),
+        ),
+        ImagingStudy(
+            id="img-009",
+            patient_id="patient-006",
+            accession_number="ACC-2024-009",
+            modality="US",
+            body_part="Heart (Echocardiogram)",
+            study_date=now - timedelta(days=60),
+            facility="Livny Health Cardiology",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Michael Chang, MD, FACC",
+            indication="Heart failure follow-up, assess LV function",
+            series_count=1,
+            image_count=45,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="66-year-old male with known ischemic cardiomyopathy and heart failure, on Coumadin for atrial fibrillation. Follow-up echocardiogram to assess LV function.",
+                technique="Transthoracic echocardiogram performed with 2D, M-mode, spectral Doppler, and color flow imaging.",
+                findings="LEFT VENTRICLE: Mildly dilated. Moderate global hypokinesis. Akinesis of inferior wall. Estimated ejection fraction 35-40%.\n\nRIGHT VENTRICLE: Normal size. Mildly reduced systolic function.\n\nLEFT ATRIUM: Moderately dilated.\n\nRIGHT ATRIUM: Mildly dilated.\n\nAORTIC VALVE: Mildly thickened. No stenosis. Trace regurgitation.\n\nMITRAL VALVE: Mildly thickened. Mild regurgitation.\n\nTRICUSPID VALVE: Trace regurgitation. Estimated RVSP 35 mmHg.\n\nPERICARDIUM: No effusion.\n\nIVC: Normal caliber with >50% respiratory variation.",
+                impression="1. Moderate LV systolic dysfunction (EF 35-40%), improved from prior (30-35%).\n2. Regional wall motion abnormality with inferior akinesis, consistent with prior inferior MI.\n3. Moderate LA dilation.\n4. Mild MR and TR.",
+                comparison_studies=[
+                    ComparisonStudy(
+                        study_id="img-old-003",
+                        date=now - timedelta(days=180),
+                        modality="US",
+                        body_part="Heart",
+                    ),
+                ],
+                critical_finding=False,
+            ),
+        ),
+
+        # Patient 003 - Emily Rodriguez - Asthma patient
+        ImagingStudy(
+            id="img-010",
+            patient_id="patient-003",
+            accession_number="ACC-2024-010",
+            modality="XR",
+            body_part="Chest",
+            study_date=now - timedelta(days=150),
+            facility="Livny Health Clinic",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist="Dr. Sarah Chen, MD",
+            indication="Asthma exacerbation, rule out pneumonia",
+            series_count=1,
+            image_count=2,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="34-year-old female with known asthma presenting with wheezing and cough. Evaluate for pneumonia or complication.",
+                technique="PA and lateral chest radiographs obtained.",
+                findings="HEART: Normal size.\nLUNGS: Hyperinflation consistent with air trapping. No focal consolidation, mass, or nodule. No pleural effusion or pneumothorax.\nMEDIASTINUM: Unremarkable.\nBONES: No acute osseous abnormality.",
+                impression="1. Hyperinflation consistent with obstructive airway disease/air trapping.\n2. No pneumonia or acute cardiopulmonary disease.",
+                comparison_studies=[],
+                critical_finding=False,
+            ),
+        ),
+
+        # Pending study example
+        ImagingStudy(
+            id="img-011",
+            patient_id="patient-004",
+            accession_number="ACC-2025-001",
+            modality="MRI",
+            body_part="Prostate",
+            study_date=now - timedelta(days=2),
+            facility="Livny Health Imaging Center",
+            ordering_provider="Dr. Elizabeth Frost",
+            reading_radiologist=None,
+            indication="Elevated PSA, further evaluation of prostate",
+            series_count=6,
+            image_count=0,
+            has_images=True,
+            report_status="pending",
+            report=None,
+        ),
+
+        # Critical finding example
+        ImagingStudy(
+            id="img-012",
+            patient_id="patient-006",
+            accession_number="ACC-2025-002",
+            modality="CT",
+            body_part="Chest",
+            study_date=now - timedelta(days=5),
+            facility="Livny Health Emergency Department",
+            ordering_provider="Dr. James Wilson",
+            reading_radiologist="Dr. Robert Kim, MD",
+            indication="Acute shortness of breath, rule out PE",
+            series_count=2,
+            image_count=198,
+            has_images=True,
+            report_status="final",
+            report=RadiologyReport(
+                clinical_indication="66-year-old male with acute onset shortness of breath and known atrial fibrillation on warfarin. D-dimer elevated. Rule out pulmonary embolism.",
+                technique="CT angiography of the chest performed with IV contrast. Timing optimized for pulmonary arterial enhancement.",
+                findings="PULMONARY ARTERIES: No pulmonary embolism. Main pulmonary artery measures 28mm (upper limit of normal).\n\nHEART: Cardiomegaly. No pericardial effusion.\n\nLUNGS: Mild pulmonary vascular congestion. Small bilateral pleural effusions, unchanged. Bibasilar atelectasis. No pneumonia.\n\nMEDIASTINUM: Calcified mediastinal lymph nodes, likely granulomatous. No pathologic lymphadenopathy.\n\nAORTA: Mildly ectatic ascending aorta (4.0cm). Mild atherosclerotic calcification.\n\nBONES: Sternotomy wires intact. Degenerative changes.",
+                impression="1. No pulmonary embolism.\n2. Mild pulmonary vascular congestion and small bilateral pleural effusions, consistent with mild heart failure.\n3. INCIDENTAL FINDING: Mildly ectatic ascending aorta (4.0cm). Recommend follow-up CT or echocardiogram in 1 year.",
+                comparison_studies=[
+                    ComparisonStudy(
+                        study_id="img-008",
+                        date=now - timedelta(days=7),
+                        modality="XR",
+                        body_part="Chest",
+                    ),
+                ],
+                critical_finding=False,
+                addendum="Addendum (1/18/2025): Incidental finding of ectatic ascending aorta communicated to ordering provider Dr. Wilson by phone at 14:35.",
+            ),
+        ),
+    ]
+
+    repo._seed(imaging_studies)
+
+
 def seed_all(
     patient_repo: PatientRepository,
     practitioner_repo: PractitionerRepository,
@@ -1396,6 +1733,7 @@ def seed_all(
     appointment_repo: AppointmentRepository,
     encounter_repo: EncounterRepository,
     visit_note_repo: VisitNoteRepository | None = None,
+    imaging_study_repo: ImagingStudyRepository | None = None,
 ) -> None:
     """Seed all repositories with initial data."""
     seed_patients(patient_repo)
@@ -1405,5 +1743,7 @@ def seed_all(
     seed_appointments(appointment_repo, patient_repo)
     if visit_note_repo:
         seed_visit_notes(visit_note_repo)
+    if imaging_study_repo:
+        seed_imaging_studies(imaging_study_repo)
     # Encounters are created dynamically when appointments are started
     print("[DATA SEEDER] All repositories seeded with initial data")

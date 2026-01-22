@@ -9,3 +9,5 @@ export { VisitTimelineFilters } from './VisitTimelineFilters';
 export { DateJumpPicker } from './DateJumpPicker';
 export { ProblemListSection } from './ProblemListSection';
 export { ProblemDetailModal } from './ProblemDetailModal';
+export { ImagingSection } from './ImagingSection';
+export { DicomViewerModal } from './DicomViewerModal';

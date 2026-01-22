@@ -20,6 +20,7 @@ from resources import (
     AppointmentRepository,
     VisitNoteRepository,
     LabResultRepository,
+    ImagingStudyRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -31,6 +32,7 @@ from services import (
     ProblemListService,
     ProblemDetailService,
     ProblemClinicalContextService,
+    ImagingService,
 )
 from services.data_seeder import seed_all
 
@@ -56,6 +58,7 @@ def repositories():
     appointment_repo = AppointmentRepository()
     visit_note_repo = VisitNoteRepository()
     lab_result_repo = LabResultRepository()
+    imaging_study_repo = ImagingStudyRepository()
 
     # Seed with test data
     seed_all(
@@ -66,6 +69,7 @@ def repositories():
         appointment_repo=appointment_repo,
         encounter_repo=encounter_repo,
         visit_note_repo=visit_note_repo,
+        imaging_study_repo=imaging_study_repo,
     )
 
     return {
@@ -78,6 +82,7 @@ def repositories():
         "appointment": appointment_repo,
         "visit_note": visit_note_repo,
         "lab_result": lab_result_repo,
+        "imaging_study": imaging_study_repo,
     }
 
 
@@ -161,4 +166,12 @@ def problem_detail_service(repositories):
         patient_repo=repositories["patient"],
         medication_repo=repositories["medication_request"],
         visit_note_repo=repositories["visit_note"],
+    )
+
+
+@pytest.fixture
+def imaging_service(repositories):
+    """Create an ImagingService for testing."""
+    return ImagingService(
+        imaging_study_repo=repositories["imaging_study"],
     )

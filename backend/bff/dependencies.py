@@ -21,6 +21,7 @@ from resources import (
     AppointmentRepository,
     LabResultRepository,
     VisitNoteRepository,
+    ImagingStudyRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -32,6 +33,7 @@ from services import (
     ProblemListService,
     ProblemClinicalContextService,
     ProblemDetailService,
+    ImagingService,
 )
 from services.data_seeder import seed_all
 
@@ -46,6 +48,7 @@ _encounter_repo: EncounterRepository | None = None
 _appointment_repo: AppointmentRepository | None = None
 _lab_result_repo: LabResultRepository | None = None
 _visit_note_repo: VisitNoteRepository | None = None
+_imaging_study_repo: ImagingStudyRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -57,6 +60,7 @@ _visit_history_service: VisitHistoryService | None = None
 _problem_list_service: ProblemListService | None = None
 _problem_clinical_context_service: ProblemClinicalContextService | None = None
 _problem_detail_service: ProblemDetailService | None = None
+_imaging_service: ImagingService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -217,6 +221,22 @@ def get_problem_detail_service() -> ProblemDetailService:
     return _problem_detail_service
 
 
+def get_imaging_study_repo() -> ImagingStudyRepository:
+    global _imaging_study_repo
+    if _imaging_study_repo is None:
+        _imaging_study_repo = ImagingStudyRepository()
+    return _imaging_study_repo
+
+
+def get_imaging_service() -> ImagingService:
+    global _imaging_service
+    if _imaging_service is None:
+        _imaging_service = ImagingService(
+            imaging_study_repo=get_imaging_study_repo(),
+        )
+    return _imaging_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -229,5 +249,6 @@ def ensure_data_seeded() -> None:
             appointment_repo=get_appointment_repo(),
             encounter_repo=get_encounter_repo(),
             visit_note_repo=get_visit_note_repo(),
+            imaging_study_repo=get_imaging_study_repo(),
         )
         _data_seeded = True

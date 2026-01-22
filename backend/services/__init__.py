@@ -48,6 +48,10 @@ from .problem_detail import (
     ProblemDetailService,
     ProblemDetailResponse,
 )
+from .imaging_service import (
+    ImagingService,
+    ImagingStudiesResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -85,4 +89,7 @@ __all__ = [
     # Problem Detail
     "ProblemDetailService",
     "ProblemDetailResponse",
+    # Imaging
+    "ImagingService",
+    "ImagingStudiesResponse",
 ]
