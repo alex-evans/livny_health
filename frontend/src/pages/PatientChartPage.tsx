@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal } from '../components/patient';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
@@ -233,7 +233,7 @@ function getGenderAbbrev(gender: string): string {
   return gender.charAt(0).toUpperCase();
 }
 
-type ChartSection = 'visits' | 'medications' | 'allergies' | 'labs' | 'problems' | 'vitals' | 'prescribe';
+type ChartSection = 'visits' | 'medications' | 'allergies' | 'labs' | 'problems' | 'vitals' | 'imaging' | 'prescribe';
 
 export function PatientChartPage() {
   const navigate = useNavigate();
@@ -932,6 +932,8 @@ export function PatientChartPage() {
         );
       case 'problems':
         return <ProblemListSection problemList={patient.problemList} onProblemClick={handleProblemClick} onReactivateProblem={handleReactivateProblem} />;
+      case 'imaging':
+        return <ImagingSection patientId={patientId || ''} />;
       case 'vitals':
         return (
           <Card>
@@ -1334,6 +1336,25 @@ export function PatientChartPage() {
               <p className="text-[13px] text-text-secondary">
                 {patient.recentLabs ? 'View results' : 'No recent labs'}
               </p>
+            </button>
+
+            {/* Imaging Card */}
+            <button
+              onClick={() => setActiveSection('imaging')}
+              className={cn(
+                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
+                activeSection === 'imaging' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
+              )}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Imaging</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-glacier-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <rect x="2" y="2" width="20" height="20" rx="2" strokeWidth={2} />
+                  <circle cx="8" cy="8" r="2" strokeWidth={2} />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15l-5-5L5 21" />
+                </svg>
+              </div>
+              <p className="text-[13px] text-text-secondary">Radiology studies</p>
             </button>
 
             {/* Vitals Card */}

@@ -72,6 +72,15 @@ from .visit_note import (
     OrderPriority,
     VisitNoteRepository,
 )
+from .imaging_study import (
+    ImagingStudy,
+    ImagingModality,
+    ReportStatus,
+    RadiologyReport,
+    ComparisonStudy,
+    MODALITY_NAMES,
+    ImagingStudyRepository,
+)
 
 __all__ = [
     # Patient
@@ -139,4 +148,12 @@ __all__ = [
     "OrderStatus",
     "OrderPriority",
     "VisitNoteRepository",
+    # ImagingStudy
+    "ImagingStudy",
+    "ImagingModality",
+    "ReportStatus",
+    "RadiologyReport",
+    "ComparisonStudy",
+    "MODALITY_NAMES",
+    "ImagingStudyRepository",
 ]
