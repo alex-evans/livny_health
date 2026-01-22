@@ -16,6 +16,7 @@ from bff.patients import router as patients_router
 from bff.medications import router as medications_router
 from bff.schedule import router as schedule_router
 from bff.imaging import router as imaging_router
+from bff.vitals import router as vitals_router
 
 
 @asynccontextmanager
@@ -45,4 +46,5 @@ app.include_router(patients_router)
 app.include_router(medications_router)
 app.include_router(schedule_router)
 app.include_router(imaging_router)
+app.include_router(vitals_router)
 

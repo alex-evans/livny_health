@@ -81,6 +81,19 @@ from .imaging_study import (
     MODALITY_NAMES,
     ImagingStudyRepository,
 )
+from .vitals import (
+    VitalSign,
+    VitalSignHistory,
+    VitalTrendAnalysis,
+    VitalType,
+    VitalStatus,
+    TrendDirection,
+    ClinicalSignificance,
+    VITAL_REFERENCE_RANGES,
+    LOWER_IS_BETTER_VITALS,
+    HIGHER_IS_BETTER_VITALS,
+    VitalSignRepository,
+)
 
 __all__ = [
     # Patient
@@ -156,4 +169,16 @@ __all__ = [
     "ComparisonStudy",
     "MODALITY_NAMES",
     "ImagingStudyRepository",
+    # VitalSigns
+    "VitalSign",
+    "VitalSignHistory",
+    "VitalTrendAnalysis",
+    "VitalType",
+    "VitalStatus",
+    "TrendDirection",
+    "ClinicalSignificance",
+    "VITAL_REFERENCE_RANGES",
+    "LOWER_IS_BETTER_VITALS",
+    "HIGHER_IS_BETTER_VITALS",
+    "VitalSignRepository",
 ]

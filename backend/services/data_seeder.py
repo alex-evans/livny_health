@@ -60,6 +60,11 @@ from resources import (
     RadiologyReport,
     ComparisonStudy,
 )
+from resources import (
+    VitalSign,
+    VitalSignRepository,
+    VITAL_REFERENCE_RANGES,
+)
 
 
 def seed_patients(repo: PatientRepository) -> None:
@@ -1725,6 +1730,254 @@ def seed_imaging_studies(repo: ImagingStudyRepository) -> None:
     repo._seed(imaging_studies)
 
 
+def seed_vitals(repo: VitalSignRepository) -> None:
+    """Seed vital signs data with 12+ months of realistic data for patient-001."""
+    import random
+
+    patient_id = "patient-001"
+    today = datetime.now()
+
+    # Base values for Sarah Johnson (slightly elevated BP, normal weight)
+    base_values = {
+        "blood_pressure_systolic": 132,
+        "blood_pressure_diastolic": 78,
+        "heart_rate": 72,
+        "temperature": 98.4,
+        "weight": 156,
+        "oxygen_saturation": 98,
+        "respiratory_rate": 16,
+        "height": 65,  # 5'5"
+    }
+
+    # Units for each vital type
+    units = {
+        "blood_pressure_systolic": "mmHg",
+        "blood_pressure_diastolic": "mmHg",
+        "heart_rate": "bpm",
+        "temperature": "°F",
+        "weight": "lbs",
+        "oxygen_saturation": "%",
+        "respiratory_rate": "breaths/min",
+        "height": "in",
+    }
+
+    locations = ["Livny Health Clinic - Main", "Livny Health Urgent Care", "Home Monitoring"]
+    providers = ["Dr. Elizabeth Frost", "Dr. Emily Chen", "MA Thompson", None]
+
+    vital_id = 0
+
+    # Height - only measured once (or very rarely)
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="height",
+        value=base_values["height"],
+        unit=units["height"],
+        status="normal",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=today - timedelta(days=365),
+        recorded_by="MA Thompson",
+        location="Livny Health Clinic - Main",
+    )
+    repo._store[vital.id] = vital
+    vital_id += 1
+
+    # Generate 18 months of data for other vitals at various frequencies
+    # BP, HR, weight - monthly visits + some urgent/extra readings
+    # Temperature, O2 sat, respiratory rate - less frequent, mainly at visits
+
+    for months_ago in range(18, -1, -1):
+        days_ago = months_ago * 30 + random.randint(-5, 5)
+        if days_ago < 0:
+            days_ago = 0
+
+        recorded_at = today - timedelta(days=days_ago)
+        location = random.choice(locations[:2])  # Clinic or urgent care
+        provider = random.choice(providers[:3])  # Exclude None for regular visits
+
+        # Weight trend: started higher, gradually decreasing (good trend for this patient)
+        weight_trend_factor = 1 + (months_ago * 0.003)  # Started about 5% higher
+        weight_value = round(base_values["weight"] * weight_trend_factor + random.uniform(-2, 2), 1)
+
+        # BP trend: started higher, improving with treatment
+        bp_sys_trend = 1 + (months_ago * 0.005)  # Started about 9% higher
+        bp_sys_value = round(base_values["blood_pressure_systolic"] * bp_sys_trend + random.uniform(-5, 5))
+        bp_dia_trend = 1 + (months_ago * 0.004)
+        bp_dia_value = round(base_values["blood_pressure_diastolic"] * bp_dia_trend + random.uniform(-3, 3))
+
+        # Heart rate - relatively stable
+        hr_value = round(base_values["heart_rate"] + random.uniform(-8, 8))
+
+        # O2 sat - mostly stable, high
+        o2_value = round(base_values["oxygen_saturation"] + random.uniform(-2, 1))
+        o2_value = min(100, max(92, o2_value))  # Keep in realistic range
+
+        # Respiratory rate - stable
+        rr_value = round(base_values["respiratory_rate"] + random.uniform(-2, 2))
+
+        # Temperature - normal most of the time
+        temp_value = round(base_values["temperature"] + random.uniform(-0.5, 0.5), 1)
+
+        # Add systolic BP
+        status = VitalSign.determine_status("blood_pressure_systolic", bp_sys_value)
+        vital = VitalSign(
+            id=f"vital-{vital_id}",
+            vital_type="blood_pressure_systolic",
+            value=bp_sys_value,
+            unit=units["blood_pressure_systolic"],
+            status=status,
+            subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+            recorded_at=recorded_at,
+            recorded_by=provider,
+            location=location,
+        )
+        repo._store[vital.id] = vital
+        vital_id += 1
+
+        # Add diastolic BP
+        status = VitalSign.determine_status("blood_pressure_diastolic", bp_dia_value)
+        vital = VitalSign(
+            id=f"vital-{vital_id}",
+            vital_type="blood_pressure_diastolic",
+            value=bp_dia_value,
+            unit=units["blood_pressure_diastolic"],
+            status=status,
+            subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+            recorded_at=recorded_at,
+            recorded_by=provider,
+            location=location,
+        )
+        repo._store[vital.id] = vital
+        vital_id += 1
+
+        # Add heart rate
+        status = VitalSign.determine_status("heart_rate", hr_value)
+        vital = VitalSign(
+            id=f"vital-{vital_id}",
+            vital_type="heart_rate",
+            value=hr_value,
+            unit=units["heart_rate"],
+            status=status,
+            subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+            recorded_at=recorded_at,
+            recorded_by=provider,
+            location=location,
+        )
+        repo._store[vital.id] = vital
+        vital_id += 1
+
+        # Add weight
+        status = VitalSign.determine_status("weight", weight_value)
+        vital = VitalSign(
+            id=f"vital-{vital_id}",
+            vital_type="weight",
+            value=weight_value,
+            unit=units["weight"],
+            status=status,
+            subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+            recorded_at=recorded_at,
+            recorded_by=provider,
+            location=location,
+        )
+        repo._store[vital.id] = vital
+        vital_id += 1
+
+        # Add O2 sat, respiratory rate, and temperature less frequently
+        if months_ago % 3 == 0 or months_ago <= 2:
+            # O2 sat
+            status = VitalSign.determine_status("oxygen_saturation", o2_value)
+            vital = VitalSign(
+                id=f"vital-{vital_id}",
+                vital_type="oxygen_saturation",
+                value=o2_value,
+                unit=units["oxygen_saturation"],
+                status=status,
+                subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+                recorded_at=recorded_at,
+                recorded_by=provider,
+                location=location,
+            )
+            repo._store[vital.id] = vital
+            vital_id += 1
+
+            # Respiratory rate
+            status = VitalSign.determine_status("respiratory_rate", rr_value)
+            vital = VitalSign(
+                id=f"vital-{vital_id}",
+                vital_type="respiratory_rate",
+                value=rr_value,
+                unit=units["respiratory_rate"],
+                status=status,
+                subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+                recorded_at=recorded_at,
+                recorded_by=provider,
+                location=location,
+            )
+            repo._store[vital.id] = vital
+            vital_id += 1
+
+            # Temperature
+            status = VitalSign.determine_status("temperature", temp_value)
+            vital = VitalSign(
+                id=f"vital-{vital_id}",
+                vital_type="temperature",
+                value=temp_value,
+                unit=units["temperature"],
+                status=status,
+                subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+                recorded_at=recorded_at,
+                recorded_by=provider,
+                location=location,
+            )
+            repo._store[vital.id] = vital
+            vital_id += 1
+
+    # Add some critical/abnormal readings for realism
+    # High BP reading from urgent care visit (9 months ago)
+    urgent_care_date = today - timedelta(days=270)
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="blood_pressure_systolic",
+        value=165,
+        unit="mmHg",
+        status="critical",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=urgent_care_date,
+        recorded_by="Dr. Michael Torres",
+        location="Livny Health Urgent Care",
+    )
+    repo._store[vital.id] = vital
+    vital_id += 1
+
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="blood_pressure_diastolic",
+        value=105,
+        unit="mmHg",
+        status="critical",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=urgent_care_date,
+        recorded_by="Dr. Michael Torres",
+        location="Livny Health Urgent Care",
+    )
+    repo._store[vital.id] = vital
+    vital_id += 1
+
+    # Fever reading during sinusitis visit (from visit history)
+    sinusitis_date = today - timedelta(days=135)  # Sept 8 from mock visits
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="temperature",
+        value=99.8,
+        unit="°F",
+        status="abnormal",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=sinusitis_date,
+        recorded_by="Dr. Michael Torres",
+        location="Livny Health Urgent Care",
+    )
+    repo._store[vital.id] = vital
+
+
 def seed_all(
     patient_repo: PatientRepository,
     practitioner_repo: PractitionerRepository,
@@ -1734,6 +1987,7 @@ def seed_all(
     encounter_repo: EncounterRepository,
     visit_note_repo: VisitNoteRepository | None = None,
     imaging_study_repo: ImagingStudyRepository | None = None,
+    vitals_repo: VitalSignRepository | None = None,
 ) -> None:
     """Seed all repositories with initial data."""
     seed_patients(patient_repo)
@@ -1745,5 +1999,7 @@ def seed_all(
         seed_visit_notes(visit_note_repo)
     if imaging_study_repo:
         seed_imaging_studies(imaging_study_repo)
+    if vitals_repo:
+        seed_vitals(vitals_repo)
     # Encounters are created dynamically when appointments are started
     print("[DATA SEEDER] All repositories seeded with initial data")

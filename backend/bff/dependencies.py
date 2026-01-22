@@ -22,6 +22,7 @@ from resources import (
     LabResultRepository,
     VisitNoteRepository,
     ImagingStudyRepository,
+    VitalSignRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -34,6 +35,7 @@ from services import (
     ProblemClinicalContextService,
     ProblemDetailService,
     ImagingService,
+    VitalsService,
 )
 from services.data_seeder import seed_all
 
@@ -49,6 +51,7 @@ _appointment_repo: AppointmentRepository | None = None
 _lab_result_repo: LabResultRepository | None = None
 _visit_note_repo: VisitNoteRepository | None = None
 _imaging_study_repo: ImagingStudyRepository | None = None
+_vitals_repo: VitalSignRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -61,6 +64,7 @@ _problem_list_service: ProblemListService | None = None
 _problem_clinical_context_service: ProblemClinicalContextService | None = None
 _problem_detail_service: ProblemDetailService | None = None
 _imaging_service: ImagingService | None = None
+_vitals_service: VitalsService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -237,6 +241,22 @@ def get_imaging_service() -> ImagingService:
     return _imaging_service
 
 
+def get_vitals_repo() -> VitalSignRepository:
+    global _vitals_repo
+    if _vitals_repo is None:
+        _vitals_repo = VitalSignRepository()
+    return _vitals_repo
+
+
+def get_vitals_service() -> VitalsService:
+    global _vitals_service
+    if _vitals_service is None:
+        _vitals_service = VitalsService(
+            vitals_repo=get_vitals_repo(),
+        )
+    return _vitals_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -250,5 +270,6 @@ def ensure_data_seeded() -> None:
             encounter_repo=get_encounter_repo(),
             visit_note_repo=get_visit_note_repo(),
             imaging_study_repo=get_imaging_study_repo(),
+            vitals_repo=get_vitals_repo(),
         )
         _data_seeded = True
