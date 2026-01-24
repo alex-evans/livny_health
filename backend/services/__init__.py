@@ -63,6 +63,10 @@ from .social_family_history_service import (
     SocialFamilyHistoryService,
     SocialFamilyHistoryResponse,
 )
+from .chart_section_service import (
+    ChartSectionService,
+    ChartSectionServiceResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -112,4 +116,7 @@ __all__ = [
     # Social Family History
     "SocialFamilyHistoryService",
     "SocialFamilyHistoryResponse",
+    # Chart Section
+    "ChartSectionService",
+    "ChartSectionServiceResponse",
 ]

@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection } from '../components/patient';
-import { useDebounce, useMedicationFreshness } from '../hooks';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
+import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
+import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -233,13 +233,41 @@ function getGenderAbbrev(gender: string): string {
   return gender.charAt(0).toUpperCase();
 }
 
-type ChartSection = 'visits' | 'medications' | 'allergies' | 'labs' | 'problems' | 'vitals' | 'imaging' | 'social-family' | 'prescribe';
+// 'prescribe' is a special workflow action, not a chart section
+type ExtendedSection = ChartSectionId | 'prescribe';
 
 export function PatientChartPage() {
   const navigate = useNavigate();
   const { patientId } = useParams<{ patientId: string }>();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeSection, setActiveSection] = useState<ChartSection>('visits');
+
+  // Chart navigation with API data
+  const {
+    sections: chartSections,
+    setActiveSection: setChartSection,
+    isLoading: isLoadingChartSections,
+  } = useChartNavigation({ patientId });
+
+  // Extended section state that includes 'prescribe' action
+  const [activeSection, setActiveSection] = useState<ExtendedSection>('visits');
+
+  // Sync extended section with chart section
+  const handleNavigate = (sectionId: ChartSectionId | 'prescribe') => {
+    setActiveSection(sectionId);
+    if (sectionId !== 'prescribe') {
+      setChartSection(sectionId);
+    }
+  };
+
+  // Set up keyboard shortcuts
+  useKeyboardShortcuts({
+    shortcuts: chartSections.map((section) => ({
+      shortcut: section.keyboardShortcut,
+      sectionId: section.id,
+    })),
+    onNavigate: handleNavigate,
+    enabled: chartSections.length > 0,
+  });
 
   // Use the medication freshness hook for patient data with real-time capabilities
   const {
@@ -775,16 +803,11 @@ export function PatientChartPage() {
     );
   }
 
-  // Count allergies with severe status
-  const severeAllergyCount = patient?.allergies?.filter(a => a.severity === 'severe').length || 0;
-  const totalAllergyCount = patient?.allergies?.length || 0;
-  const hasAnaphylaxis = patient?.allergies?.some(a => a.isAnaphylaxis) || false;
-
   // Render the active section content
   const renderMainContent = () => {
     switch (activeSection) {
       case 'visits':
-        return <VisitTimeline patientId={patientId || ''} onNavigateToSection={setActiveSection} />;
+        return <VisitTimeline patientId={patientId || ''} onNavigateToSection={handleNavigate} />;
       case 'allergies':
         return (
           <AllergiesSection
@@ -1165,223 +1188,24 @@ export function PatientChartPage() {
           </CardContent>
         </Card>
 
-        {/* Three Column Layout */}
+        {/* Two Column Layout: Left Nav + Main Content */}
         <div className="grid grid-cols-12 gap-normal">
-          {/* Left Sidebar - Navigation Cards */}
-          <div className="col-span-3 space-y-tight">
-            {/* Allergies Card */}
-            <button
-              onClick={() => setActiveSection('allergies')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'allergies' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white',
-                (severeAllergyCount > 0 || hasAnaphylaxis) && activeSection !== 'allergies' && 'border-l-4 border-critical'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Allergies</span>
-                {totalAllergyCount > 0 ? (
-                  <span className={cn(
-                    'px-2 py-0.5 rounded text-[11px] font-medium',
-                    severeAllergyCount > 0 ? 'bg-critical/10 text-critical' : 'bg-warning/10 text-warning'
-                  )}>
-                    {totalAllergyCount}
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success">NKDA</span>
-                )}
-              </div>
-              {hasAnaphylaxis && (
-                <p className="text-[13px] text-critical font-medium">Anaphylaxis Risk</p>
-              )}
-              {!hasAnaphylaxis && severeAllergyCount > 0 && (
-                <p className="text-[13px] text-critical">{severeAllergyCount} severe</p>
-              )}
-              {!hasAnaphylaxis && severeAllergyCount === 0 && totalAllergyCount > 0 && (
-                <p className="text-[13px] text-text-secondary">{totalAllergyCount} documented</p>
-              )}
-            </button>
-
-            {/* Medications Card */}
-            <button
-              onClick={() => setActiveSection('medications')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'medications' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Medications</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-frost text-text-secondary">
-                  {patient.activeMedications?.length || 0}
-                </span>
-              </div>
-              <p className="text-[13px] text-text-secondary">
-                {patient.activeMedications?.length || 0} active
-              </p>
-            </button>
-
-            {/* Problem List Card */}
-            <button
-              onClick={() => setActiveSection('problems')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'problems' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Problems</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-frost text-text-secondary">
-                  {patient.problemList?.length || 0}
-                </span>
-              </div>
-              {patient.problemList && patient.problemList.length > 0 && (
-                <p className="text-[13px] text-text-secondary truncate">
-                  {patient.problemList[0].name}
-                </p>
-              )}
-            </button>
-
-            {/* Prescribe Action Card */}
-            <button
-              onClick={() => setActiveSection('prescribe')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'prescribe' ? 'bg-glacier-blue text-white' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className={cn('h-5 w-5', activeSection === 'prescribe' ? 'text-white' : 'text-glacier-blue')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className={cn('text-[15px] font-medium', activeSection === 'prescribe' ? 'text-white' : 'text-glacier-blue')}>
-                  Prescribe
-                </span>
-              </div>
-              {prescription.length > 0 && (
-                <p className={cn('text-[13px] mt-1', activeSection === 'prescribe' ? 'text-white/80' : 'text-text-secondary')}>
-                  {prescription.length} pending
-                </p>
-              )}
-            </button>
+          {/* Left Sidebar Navigation */}
+          <div className="col-span-3">
+            <ChartNavigation
+              sections={chartSections}
+              activeSection={activeSection === 'prescribe' ? 'medications' : activeSection}
+              onNavigate={handleNavigate}
+              isLoading={isLoadingChartSections}
+              onPrescribeClick={() => handleNavigate('prescribe')}
+              prescriptionCount={prescription.length}
+              isPrescribeActive={activeSection === 'prescribe'}
+            />
           </div>
 
           {/* Main Content Area */}
-          <div className="col-span-6">
+          <div className="col-span-9">
             {renderMainContent()}
-          </div>
-
-          {/* Right Sidebar - Quick Info */}
-          <div className="col-span-3 space-y-tight">
-            {/* Visit History Card */}
-            <button
-              onClick={() => setActiveSection('visits')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'visits' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Chart Notes</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-glacier-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="text-[13px] text-text-secondary">Previous visits</p>
-            </button>
-
-            {/* Labs Card */}
-            <button
-              onClick={() => setActiveSection('labs')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'labs' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Labs</span>
-                {patient.recentLabs && patient.recentLabs.panels.length > 0 && (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-frost text-text-secondary">
-                    {patient.recentLabs.panels.length}
-                  </span>
-                )}
-              </div>
-              <p className="text-[13px] text-text-secondary">
-                {patient.recentLabs ? 'View results' : 'No recent labs'}
-              </p>
-            </button>
-
-            {/* Imaging Card */}
-            <button
-              onClick={() => setActiveSection('imaging')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'imaging' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Imaging</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-glacier-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <rect x="2" y="2" width="20" height="20" rx="2" strokeWidth={2} />
-                  <circle cx="8" cy="8" r="2" strokeWidth={2} />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15l-5-5L5 21" />
-                </svg>
-              </div>
-              <p className="text-[13px] text-text-secondary">Radiology studies</p>
-            </button>
-
-            {/* Vitals Card */}
-            <button
-              onClick={() => setActiveSection('vitals')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'vitals' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Vitals</span>
-                {patient.recentVitals && (
-                  <span className="text-[11px] text-text-tertiary">{patient.recentVitals.date}</span>
-                )}
-              </div>
-              {patient.recentVitals ? (
-                <p className="text-[13px] text-text-secondary">
-                  BP: {patient.recentVitals.bloodPressure}
-                </p>
-              ) : (
-                <p className="text-[13px] text-text-secondary">No recent vitals</p>
-              )}
-            </button>
-
-            {/* Social/Family History Card */}
-            <button
-              onClick={() => setActiveSection('social-family')}
-              className={cn(
-                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
-                activeSection === 'social-family' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Social/Family Hx</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-glacier-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <p className="text-[13px] text-text-secondary">Social & family history</p>
-            </button>
-
-            {/* Contact Info Card */}
-            <div className="rounded-lg shadow-card p-normal bg-white">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Contact</span>
-              <p className="text-[13px] text-text-primary mt-1">
-                {patient.phone || '(555) 123-4567'}
-              </p>
-              <p className="text-[13px] text-text-secondary mt-1 truncate">
-                {patient.insurance
-                  ? patient.insurance.provider
-                  : 'Blue Cross Blue Shield'}
-              </p>
-            </div>
           </div>
         </div>
       </div>

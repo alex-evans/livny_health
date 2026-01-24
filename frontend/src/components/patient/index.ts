@@ -22,3 +22,7 @@ export { SocialFamilyHistorySection } from './SocialFamilyHistorySection';
 export { SocialHistoryDisplay } from './SocialHistoryDisplay';
 export { FamilyHistoryDisplay } from './FamilyHistoryDisplay';
 export { RiskAssessmentDisplay } from './RiskAssessmentDisplay';
+export { ChartNavigation } from './ChartNavigation';
+export { ChartNavigationItem } from './ChartNavigationItem';
+export { SectionBadge } from './SectionBadge';
+export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
