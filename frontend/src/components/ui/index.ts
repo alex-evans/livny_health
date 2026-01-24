@@ -7,5 +7,7 @@ export { AllergyBlockModal } from './AllergyBlockModal';
 export { AllergyWarningBanner } from './AllergyWarningBanner';
 export { DrugInteractionWarning } from './DrugInteractionWarning';
 export { DrugInteractionBlockModal } from './DrugInteractionBlockModal';
+export { ClinicalAlertBanner } from './ClinicalAlertBanner';
+export { AlertBadge, AlertBadgeDetailed } from './AlertBadge';
 export type { AllergyOverrideData } from './AllergyBlockModal';
 export type { InteractionOverrideData } from './DrugInteractionBlockModal';

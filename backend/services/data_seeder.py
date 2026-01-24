@@ -1988,6 +1988,37 @@ def seed_vitals(repo: VitalSignRepository) -> None:
         location="Livny Health Urgent Care",
     )
     repo._store[vital.id] = vital
+    vital_id += 1
+
+    # RECENT CRITICAL VITALS (for testing clinical alerts)
+    # High blood pressure from today - needs attention
+    recent_date = today - timedelta(hours=4)
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="blood_pressure_systolic",
+        value=185,
+        unit="mmHg",
+        status="critical",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=recent_date,
+        recorded_by="Dr. Emily Chen",
+        location="Livny Health Clinic - Main",
+    )
+    repo._store[vital.id] = vital
+    vital_id += 1
+
+    vital = VitalSign(
+        id=f"vital-{vital_id}",
+        vital_type="blood_pressure_diastolic",
+        value=120,
+        unit="mmHg",
+        status="critical",
+        subject=Reference.to("Patient", patient_id, "Sarah Johnson"),
+        recorded_at=recent_date,
+        recorded_by="Dr. Emily Chen",
+        location="Livny Health Clinic - Main",
+    )
+    repo._store[vital.id] = vital
 
 
 def seed_social_family_history(repo: SocialFamilyHistoryRepository) -> None:

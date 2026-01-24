@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
+import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, ClinicalAlertBanner, AlertBadge, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection } from '../components/patient';
-import { useDebounce, useMedicationFreshness } from '../hooks';
+import { useDebounce, useMedicationFreshness, useAlerts } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
@@ -278,6 +278,14 @@ export function PatientChartPage() {
   const [problemDetailError, setProblemDetailError] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Clinical alerts hook
+  const {
+    alerts,
+    summary: alertSummary,
+    isLoading: isLoadingAlerts,
+    acknowledge: acknowledgeAlert,
+  } = useAlerts({ patientId: patientId || '', status: 'active' });
 
   // Filter and sort active medications
   const filteredAndSortedMedications = useMemo(() => {
@@ -715,6 +723,14 @@ export function PatientChartPage() {
     }
   };
 
+  const handleAcknowledgeAlert = async (alertId: string) => {
+    try {
+      await acknowledgeAlert(alertId);
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
+    }
+  };
+
   const handleSubmitPrescription = async () => {
     if (!patientId || prescription.length === 0) return;
 
@@ -1140,7 +1156,12 @@ export function PatientChartPage() {
               </button>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
+                  <div className="flex items-center gap-tight">
+                    <h1 className="text-xl font-semibold text-deep-ice">{patient.name}</h1>
+                    {!isLoadingAlerts && alertSummary.totalActive > 0 && (
+                      <AlertBadge summary={alertSummary} />
+                    )}
+                  </div>
                   <span className="text-[15px] text-text-secondary">MRN: {patient.mrn}</span>
                 </div>
                 <div className="flex items-center justify-between mt-1">
@@ -1268,6 +1289,14 @@ export function PatientChartPage() {
 
           {/* Main Content Area */}
           <div className="col-span-6">
+            {/* Clinical Alerts Banner */}
+            {!isLoadingAlerts && alerts.length > 0 && (
+              <ClinicalAlertBanner
+                alerts={alerts}
+                onAcknowledge={handleAcknowledgeAlert}
+                className="mb-normal"
+              />
+            )}
             {renderMainContent()}
           </div>
 
