@@ -18,3 +18,7 @@ export { VitalTrendGraph } from './VitalTrendGraph';
 export { VitalHistoryModal } from './VitalHistoryModal';
 export { VitalHistoryTable } from './VitalHistoryTable';
 export { CurrentVitals } from './CurrentVitals';
+export { SocialFamilyHistorySection } from './SocialFamilyHistorySection';
+export { SocialHistoryDisplay } from './SocialHistoryDisplay';
+export { FamilyHistoryDisplay } from './FamilyHistoryDisplay';
+export { RiskAssessmentDisplay } from './RiskAssessmentDisplay';

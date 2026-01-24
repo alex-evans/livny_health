@@ -65,6 +65,18 @@ from resources import (
     VitalSignRepository,
     VITAL_REFERENCE_RANGES,
 )
+from resources import (
+    SocialFamilyHistory,
+    SocialFamilyHistoryRepository,
+    SocialHistory,
+    FamilyHistory,
+    SmokingHistory,
+    AlcoholHistory,
+    SubstanceUseHistory,
+    FamilyMember,
+    FamilyMemberCondition,
+    SignificantCondition,
+)
 
 
 def seed_patients(repo: PatientRepository) -> None:
@@ -1978,6 +1990,254 @@ def seed_vitals(repo: VitalSignRepository) -> None:
     repo._store[vital.id] = vital
 
 
+def seed_social_family_history(repo: SocialFamilyHistoryRepository) -> None:
+    """Seed social and family history data for test patients."""
+
+    # Patient-001: Sarah Johnson
+    # Former smoker, occasional alcohol, married, family history of diabetes/HTN/breast cancer
+    patient_001_history = SocialFamilyHistory(
+        id="sfh-001",
+        subject=Reference.to("Patient", "patient-001", "Sarah Johnson"),
+        social_history=SocialHistory(
+            smoking=SmokingHistory(
+                status="former",
+                pack_years=8.5,
+                quit_date=date(2018, 6, 1),
+                notes="Quit smoking after diabetes diagnosis. Previously smoked 1/2 pack/day for 17 years.",
+            ),
+            alcohol=AlcoholHistory(
+                use_level="occasional",
+                drinks_per_week=2,
+                history_of_abuse=False,
+                notes="Social drinking only, wine with dinner 1-2x/week.",
+            ),
+            substance_use=SubstanceUseHistory(
+                level="none",
+                substances=[],
+                iv_drug_use=False,
+            ),
+            occupation="Marketing Manager",
+            occupation_hazards=[],
+            living_situation="Lives with spouse and two children in suburban home",
+            marital_status="married",
+            exercise="light",
+            diet="diabetic",
+            diet_notes="Following low-carb diet for diabetes management. Avoids peanuts (allergy).",
+            last_reviewed=datetime(2024, 11, 15),
+            reviewed_by="Dr. Elizabeth Frost",
+        ),
+        family_history=FamilyHistory(
+            family_members=[
+                FamilyMember(
+                    id="fm-001-1",
+                    relative_type="father",
+                    is_living=True,
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Type 2 diabetes mellitus",
+                            icd10_code="E11",
+                            age_at_onset=52,
+                            notes="Diet-controlled initially, now on metformin",
+                        ),
+                        FamilyMemberCondition(
+                            condition_name="Essential hypertension",
+                            icd10_code="I10",
+                            age_at_onset=48,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-001-2",
+                    relative_type="mother",
+                    is_living=True,
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Breast cancer",
+                            icd10_code="C50.9",
+                            age_at_onset=58,
+                            notes="Stage IIA, successfully treated with lumpectomy and radiation",
+                        ),
+                        FamilyMemberCondition(
+                            condition_name="Osteoarthritis",
+                            icd10_code="M19.90",
+                            age_at_onset=62,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-001-3",
+                    relative_type="maternal_grandmother",
+                    is_living=False,
+                    age_at_death=78,
+                    cause_of_death="Breast cancer",
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Breast cancer",
+                            icd10_code="C50.9",
+                            age_at_onset=72,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-001-4",
+                    relative_type="paternal_grandfather",
+                    is_living=False,
+                    age_at_death=71,
+                    cause_of_death="Myocardial infarction",
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Coronary artery disease",
+                            icd10_code="I25.10",
+                            age_at_onset=58,
+                        ),
+                        FamilyMemberCondition(
+                            condition_name="Type 2 diabetes mellitus",
+                            icd10_code="E11",
+                            age_at_onset=55,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-001-5",
+                    relative_type="brother",
+                    is_living=True,
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Pre-diabetes",
+                            icd10_code="R73.03",
+                            age_at_onset=35,
+                        ),
+                    ],
+                ),
+            ],
+            significant_conditions=[
+                SignificantCondition(
+                    condition_name="Type 2 diabetes mellitus",
+                    icd10_code="E11",
+                    affected_relatives=["father", "paternal_grandfather", "brother (pre-diabetes)"],
+                    notes="Strong family history of diabetes, multiple first-degree relatives affected",
+                ),
+                SignificantCondition(
+                    condition_name="Breast cancer",
+                    icd10_code="C50.9",
+                    affected_relatives=["mother", "maternal_grandmother"],
+                    notes="Two generations affected, recommend genetic counseling",
+                ),
+                SignificantCondition(
+                    condition_name="Cardiovascular disease",
+                    icd10_code="I25",
+                    affected_relatives=["paternal_grandfather", "father (HTN)"],
+                ),
+            ],
+            hereditary_syndromes=[],
+            adoption_status="not_adopted",
+            last_reviewed=datetime(2024, 11, 15),
+            reviewed_by="Dr. Elizabeth Frost",
+        ),
+    )
+
+    # Patient-002: Robert Chen
+    # Never smoker, moderate alcohol, divorced, family history varies
+    patient_002_history = SocialFamilyHistory(
+        id="sfh-002",
+        subject=Reference.to("Patient", "patient-002", "Robert Chen"),
+        social_history=SocialHistory(
+            smoking=SmokingHistory(
+                status="never",
+                pack_years=None,
+                quit_date=None,
+            ),
+            alcohol=AlcoholHistory(
+                use_level="moderate",
+                drinks_per_week=7,
+                history_of_abuse=False,
+                notes="1-2 beers daily after work",
+            ),
+            substance_use=SubstanceUseHistory(
+                level="past",
+                substances=["marijuana"],
+                iv_drug_use=False,
+                notes="Occasional marijuana use in college, none since age 25",
+            ),
+            occupation="Software Engineer",
+            occupation_hazards=["Prolonged sitting", "Screen time"],
+            living_situation="Lives alone in downtown apartment",
+            marital_status="divorced",
+            exercise="sedentary",
+            diet="regular",
+            diet_notes="Fast food 3-4x/week, limited fruits and vegetables",
+            last_reviewed=datetime(2024, 10, 20),
+            reviewed_by="Dr. Elizabeth Frost",
+        ),
+        family_history=FamilyHistory(
+            family_members=[
+                FamilyMember(
+                    id="fm-002-1",
+                    relative_type="father",
+                    is_living=True,
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Hyperlipidemia",
+                            icd10_code="E78.5",
+                            age_at_onset=45,
+                        ),
+                        FamilyMemberCondition(
+                            condition_name="Gastroesophageal reflux disease",
+                            icd10_code="K21.0",
+                            age_at_onset=50,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-002-2",
+                    relative_type="mother",
+                    is_living=True,
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Migraine",
+                            icd10_code="G43.9",
+                            age_at_onset=30,
+                        ),
+                    ],
+                ),
+                FamilyMember(
+                    id="fm-002-3",
+                    relative_type="paternal_grandfather",
+                    is_living=False,
+                    age_at_death=82,
+                    cause_of_death="Prostate cancer",
+                    conditions=[
+                        FamilyMemberCondition(
+                            condition_name="Prostate cancer",
+                            icd10_code="C61",
+                            age_at_onset=78,
+                        ),
+                        FamilyMemberCondition(
+                            condition_name="Benign prostatic hyperplasia",
+                            icd10_code="N40.0",
+                            age_at_onset=65,
+                        ),
+                    ],
+                ),
+            ],
+            significant_conditions=[
+                SignificantCondition(
+                    condition_name="Hyperlipidemia",
+                    icd10_code="E78.5",
+                    affected_relatives=["father"],
+                ),
+            ],
+            hereditary_syndromes=[],
+            adoption_status="not_adopted",
+            last_reviewed=datetime(2024, 10, 20),
+            reviewed_by="Dr. Elizabeth Frost",
+        ),
+    )
+
+    repo._store[patient_001_history.id] = patient_001_history
+    repo._store[patient_002_history.id] = patient_002_history
+
+
 def seed_all(
     patient_repo: PatientRepository,
     practitioner_repo: PractitionerRepository,
@@ -1988,6 +2248,7 @@ def seed_all(
     visit_note_repo: VisitNoteRepository | None = None,
     imaging_study_repo: ImagingStudyRepository | None = None,
     vitals_repo: VitalSignRepository | None = None,
+    social_family_history_repo: SocialFamilyHistoryRepository | None = None,
 ) -> None:
     """Seed all repositories with initial data."""
     seed_patients(patient_repo)
@@ -2001,5 +2262,7 @@ def seed_all(
         seed_imaging_studies(imaging_study_repo)
     if vitals_repo:
         seed_vitals(vitals_repo)
+    if social_family_history_repo:
+        seed_social_family_history(social_family_history_repo)
     # Encounters are created dynamically when appointments are started
     print("[DATA SEEDER] All repositories seeded with initial data")

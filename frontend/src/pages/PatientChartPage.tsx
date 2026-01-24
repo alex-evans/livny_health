@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection } from '../components/patient';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection } from '../components/patient';
 import { useDebounce, useMedicationFreshness } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse } from '../types';
@@ -233,7 +233,7 @@ function getGenderAbbrev(gender: string): string {
   return gender.charAt(0).toUpperCase();
 }
 
-type ChartSection = 'visits' | 'medications' | 'allergies' | 'labs' | 'problems' | 'vitals' | 'imaging' | 'prescribe';
+type ChartSection = 'visits' | 'medications' | 'allergies' | 'labs' | 'problems' | 'vitals' | 'imaging' | 'social-family' | 'prescribe';
 
 export function PatientChartPage() {
   const navigate = useNavigate();
@@ -936,6 +936,8 @@ export function PatientChartPage() {
         return <ImagingSection patientId={patientId || ''} />;
       case 'vitals':
         return <VitalSignsSection patientId={patientId || ''} />;
+      case 'social-family':
+        return <SocialFamilyHistorySection patientId={patientId || ''} />;
       case 'prescribe':
         return renderPrescribeSection();
       default:
@@ -1349,6 +1351,23 @@ export function PatientChartPage() {
               ) : (
                 <p className="text-[13px] text-text-secondary">No recent vitals</p>
               )}
+            </button>
+
+            {/* Social/Family History Card */}
+            <button
+              onClick={() => setActiveSection('social-family')}
+              className={cn(
+                'w-full text-left rounded-lg shadow-card p-normal transition-all hover:shadow-card-hover',
+                activeSection === 'social-family' ? 'bg-arctic ring-2 ring-glacier-blue' : 'bg-white'
+              )}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">Social/Family Hx</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-glacier-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <p className="text-[13px] text-text-secondary">Social & family history</p>
             </button>
 
             {/* Contact Info Card */}
