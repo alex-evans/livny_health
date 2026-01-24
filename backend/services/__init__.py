@@ -59,6 +59,10 @@ from .vitals_service import (
     CurrentVitalResponse,
     BMIResponse,
 )
+from .social_family_history_service import (
+    SocialFamilyHistoryService,
+    SocialFamilyHistoryResponse,
+)
 
 __all__ = [
     # Clinical Decision
@@ -105,4 +109,7 @@ __all__ = [
     "VitalHistoryResponse",
     "CurrentVitalResponse",
     "BMIResponse",
+    # Social Family History
+    "SocialFamilyHistoryService",
+    "SocialFamilyHistoryResponse",
 ]

@@ -23,6 +23,7 @@ from resources import (
     VisitNoteRepository,
     ImagingStudyRepository,
     VitalSignRepository,
+    SocialFamilyHistoryRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -36,6 +37,7 @@ from services import (
     ProblemDetailService,
     ImagingService,
     VitalsService,
+    SocialFamilyHistoryService,
 )
 from services.data_seeder import seed_all
 
@@ -52,6 +54,7 @@ _lab_result_repo: LabResultRepository | None = None
 _visit_note_repo: VisitNoteRepository | None = None
 _imaging_study_repo: ImagingStudyRepository | None = None
 _vitals_repo: VitalSignRepository | None = None
+_social_family_history_repo: SocialFamilyHistoryRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -65,6 +68,7 @@ _problem_clinical_context_service: ProblemClinicalContextService | None = None
 _problem_detail_service: ProblemDetailService | None = None
 _imaging_service: ImagingService | None = None
 _vitals_service: VitalsService | None = None
+_social_family_history_service: SocialFamilyHistoryService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -257,6 +261,22 @@ def get_vitals_service() -> VitalsService:
     return _vitals_service
 
 
+def get_social_family_history_repo() -> SocialFamilyHistoryRepository:
+    global _social_family_history_repo
+    if _social_family_history_repo is None:
+        _social_family_history_repo = SocialFamilyHistoryRepository()
+    return _social_family_history_repo
+
+
+def get_social_family_history_service() -> SocialFamilyHistoryService:
+    global _social_family_history_service
+    if _social_family_history_service is None:
+        _social_family_history_service = SocialFamilyHistoryService(
+            social_family_history_repo=get_social_family_history_repo(),
+        )
+    return _social_family_history_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -271,5 +291,6 @@ def ensure_data_seeded() -> None:
             visit_note_repo=get_visit_note_repo(),
             imaging_study_repo=get_imaging_study_repo(),
             vitals_repo=get_vitals_repo(),
+            social_family_history_repo=get_social_family_history_repo(),
         )
         _data_seeded = True
