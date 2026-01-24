@@ -3,3 +3,5 @@ export { getPatients, getPatient, checkAllergyConflict, logAllergyOverride, chec
 export type { AllergyOverrideLogRequest, InteractionOverrideLogRequest, PrescribedMedication, PrescriptionResponse } from './patientApi';
 export { getDailySchedule } from './scheduleApi';
 export { mockUsers, mockMedications } from './mockData';
+export { getPatientAlerts, getAlertSummary, acknowledgeAlert, dismissAlert } from './alertApi';
+export type { GetAlertsParams, AcknowledgeAlertParams, DismissAlertParams } from './alertApi';

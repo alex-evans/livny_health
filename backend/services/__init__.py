@@ -63,6 +63,26 @@ from .social_family_history_service import (
     SocialFamilyHistoryService,
     SocialFamilyHistoryResponse,
 )
+from .clinical_alert_service import (
+    ClinicalAlertService,
+    ClinicalAlertServiceBuilder,
+    AlertsResponse,
+)
+from .alert_generators import (
+    AlertGenerator,
+    LabAlertGenerator,
+    VitalAlertGenerator,
+    ImagingAlertGenerator,
+    ScreeningAlertGenerator,
+    ChronicDiseaseAlertGenerator,
+)
+from .alert_thresholds import (
+    CRITICAL_LAB_THRESHOLDS,
+    CRITICAL_VITAL_THRESHOLDS,
+    SCREENING_INTERVALS,
+    get_lab_severity,
+    get_vital_severity,
+)
 
 __all__ = [
     # Clinical Decision
@@ -112,4 +132,19 @@ __all__ = [
     # Social Family History
     "SocialFamilyHistoryService",
     "SocialFamilyHistoryResponse",
+    # Clinical Alerts
+    "ClinicalAlertService",
+    "ClinicalAlertServiceBuilder",
+    "AlertsResponse",
+    "AlertGenerator",
+    "LabAlertGenerator",
+    "VitalAlertGenerator",
+    "ImagingAlertGenerator",
+    "ScreeningAlertGenerator",
+    "ChronicDiseaseAlertGenerator",
+    "CRITICAL_LAB_THRESHOLDS",
+    "CRITICAL_VITAL_THRESHOLDS",
+    "SCREENING_INTERVALS",
+    "get_lab_severity",
+    "get_vital_severity",
 ]
