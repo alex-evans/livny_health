@@ -42,7 +42,6 @@ from services import (
     ChartSectionService,
     ClinicalAlertService,
     ClinicalAlertServiceBuilder,
-    ChartSectionService,
 )
 from services.data_seeder import seed_all
 
@@ -77,7 +76,6 @@ _vitals_service: VitalsService | None = None
 _social_family_history_service: SocialFamilyHistoryService | None = None
 _chart_section_service: ChartSectionService | None = None
 _clinical_alert_service: ClinicalAlertService | None = None
-_chart_section_service: ChartSectionService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -321,22 +319,6 @@ def get_clinical_alert_service() -> ClinicalAlertService:
             medication_request_repo=get_medication_request_repo(),
         )
     return _clinical_alert_service
-
-
-def get_chart_section_service() -> ChartSectionService:
-    global _chart_section_service
-    if _chart_section_service is None:
-        _chart_section_service = ChartSectionService(
-            patient_repo=get_patient_repo(),
-            allergy_repo=get_allergy_repo(),
-            medication_request_repo=get_medication_request_repo(),
-            visit_note_repo=get_visit_note_repo(),
-            lab_result_repo=get_lab_result_repo(),
-            imaging_study_repo=get_imaging_study_repo(),
-            vitals_repo=get_vitals_repo(),
-            social_family_history_repo=get_social_family_history_repo(),
-        )
-    return _chart_section_service
 
 
 def ensure_data_seeded() -> None:

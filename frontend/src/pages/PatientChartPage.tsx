@@ -3,11 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, ClinicalAlertBanner, AlertBadge, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
-import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts } from '../hooks';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection } from '../components/patient';
-import { useDebounce, useMedicationFreshness, useAlerts } from '../hooks';
-import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
-import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts } from '../hooks';
+import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts, useAlerts } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
@@ -1230,7 +1226,6 @@ export function PatientChartPage() {
 
           {/* Main Content Area */}
           <div className="col-span-9">
-          <div className="col-span-6">
             {/* Clinical Alerts Banner */}
             {!isLoadingAlerts && alerts.length > 0 && (
               <ClinicalAlertBanner
@@ -1239,7 +1234,6 @@ export function PatientChartPage() {
                 className="mb-normal"
               />
             )}
-          <div className="col-span-9">
             {renderMainContent()}
           </div>
         </div>
