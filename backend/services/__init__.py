@@ -85,6 +85,9 @@ from .alert_thresholds import (
     SCREENING_INTERVALS,
     get_lab_severity,
     get_vital_severity,
+from .chart_section_service import (
+    ChartSectionService,
+    ChartSectionServiceResponse,
 )
 
 __all__ = [
@@ -153,4 +156,7 @@ __all__ = [
     "SCREENING_INTERVALS",
     "get_lab_severity",
     "get_vital_severity",
+    # Chart Section
+    "ChartSectionService",
+    "ChartSectionServiceResponse",
 ]

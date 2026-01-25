@@ -132,6 +132,12 @@ from .clinical_alert import (
     AlertSeverity,
     AlertStatus,
     ClinicalAlertRepository,
+from .chart_section import (
+    AlertLevel,
+    SectionIcon,
+    KeyboardShortcut,
+    ChartSection,
+    ChartSectionsResponse,
 )
 
 __all__ = [
@@ -257,4 +263,10 @@ __all__ = [
     "AlertSeverity",
     "AlertStatus",
     "ClinicalAlertRepository",
+    # ChartSection
+    "AlertLevel",
+    "SectionIcon",
+    "KeyboardShortcut",
+    "ChartSection",
+    "ChartSectionsResponse",
 ]

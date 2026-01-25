@@ -20,6 +20,7 @@ from bff.vitals import router as vitals_router
 from bff.social_family_history import router as social_family_history_router
 from bff.chart_sections import router as chart_sections_router
 from bff.alerts import router as alerts_router
+from bff.chart_sections import router as chart_sections_router
 
 
 @asynccontextmanager
@@ -53,4 +54,5 @@ app.include_router(vitals_router)
 app.include_router(social_family_history_router)
 app.include_router(chart_sections_router)
 app.include_router(alerts_router)
+app.include_router(chart_sections_router)
 

@@ -6,6 +6,8 @@ import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection,
 import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts } from '../hooks';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection } from '../components/patient';
 import { useDebounce, useMedicationFreshness, useAlerts } from '../hooks';
+import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
+import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
 import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
@@ -1237,6 +1239,7 @@ export function PatientChartPage() {
                 className="mb-normal"
               />
             )}
+          <div className="col-span-9">
             {renderMainContent()}
           </div>
         </div>
