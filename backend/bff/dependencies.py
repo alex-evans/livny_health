@@ -24,6 +24,7 @@ from resources import (
     ImagingStudyRepository,
     VitalSignRepository,
     SocialFamilyHistoryRepository,
+    ClinicalAlertRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -39,6 +40,8 @@ from services import (
     VitalsService,
     SocialFamilyHistoryService,
     ChartSectionService,
+    ClinicalAlertService,
+    ClinicalAlertServiceBuilder,
 )
 from services.data_seeder import seed_all
 
@@ -56,6 +59,7 @@ _visit_note_repo: VisitNoteRepository | None = None
 _imaging_study_repo: ImagingStudyRepository | None = None
 _vitals_repo: VitalSignRepository | None = None
 _social_family_history_repo: SocialFamilyHistoryRepository | None = None
+_clinical_alert_repo: ClinicalAlertRepository | None = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -71,6 +75,7 @@ _imaging_service: ImagingService | None = None
 _vitals_service: VitalsService | None = None
 _social_family_history_service: SocialFamilyHistoryService | None = None
 _chart_section_service: ChartSectionService | None = None
+_clinical_alert_service: ClinicalAlertService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -293,6 +298,27 @@ def get_chart_section_service() -> ChartSectionService:
             social_family_history_repo=get_social_family_history_repo(),
         )
     return _chart_section_service
+
+
+def get_clinical_alert_repo() -> ClinicalAlertRepository:
+    global _clinical_alert_repo
+    if _clinical_alert_repo is None:
+        _clinical_alert_repo = ClinicalAlertRepository()
+    return _clinical_alert_repo
+
+
+def get_clinical_alert_service() -> ClinicalAlertService:
+    global _clinical_alert_service
+    if _clinical_alert_service is None:
+        _clinical_alert_service = ClinicalAlertServiceBuilder.build(
+            alert_repo=get_clinical_alert_repo(),
+            lab_result_repo=get_lab_result_repo(),
+            vitals_repo=get_vitals_repo(),
+            imaging_repo=get_imaging_study_repo(),
+            patient_repo=get_patient_repo(),
+            medication_request_repo=get_medication_request_repo(),
+        )
+    return _clinical_alert_service
 
 
 def ensure_data_seeded() -> None:

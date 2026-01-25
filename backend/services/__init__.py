@@ -66,6 +66,25 @@ from .social_family_history_service import (
 from .chart_section_service import (
     ChartSectionService,
     ChartSectionServiceResponse,
+from .clinical_alert_service import (
+    ClinicalAlertService,
+    ClinicalAlertServiceBuilder,
+    AlertsResponse,
+)
+from .alert_generators import (
+    AlertGenerator,
+    LabAlertGenerator,
+    VitalAlertGenerator,
+    ImagingAlertGenerator,
+    ScreeningAlertGenerator,
+    ChronicDiseaseAlertGenerator,
+)
+from .alert_thresholds import (
+    CRITICAL_LAB_THRESHOLDS,
+    CRITICAL_VITAL_THRESHOLDS,
+    SCREENING_INTERVALS,
+    get_lab_severity,
+    get_vital_severity,
 )
 
 __all__ = [
@@ -119,4 +138,19 @@ __all__ = [
     # Chart Section
     "ChartSectionService",
     "ChartSectionServiceResponse",
+    # Clinical Alerts
+    "ClinicalAlertService",
+    "ClinicalAlertServiceBuilder",
+    "AlertsResponse",
+    "AlertGenerator",
+    "LabAlertGenerator",
+    "VitalAlertGenerator",
+    "ImagingAlertGenerator",
+    "ScreeningAlertGenerator",
+    "ChronicDiseaseAlertGenerator",
+    "CRITICAL_LAB_THRESHOLDS",
+    "CRITICAL_VITAL_THRESHOLDS",
+    "SCREENING_INTERVALS",
+    "get_lab_severity",
+    "get_vital_severity",
 ]
