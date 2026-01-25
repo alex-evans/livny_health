@@ -118,6 +118,13 @@ from .social_family_history import (
     RELATIVE_DEGREE_MAP,
     SocialFamilyHistoryRepository,
 )
+from .chart_section import (
+    AlertLevel,
+    SectionIcon,
+    KeyboardShortcut,
+    ChartSection,
+    ChartSectionsResponse,
+)
 from .clinical_alert import (
     ClinicalAlert,
     AlertAcknowledgment,
@@ -237,6 +244,12 @@ __all__ = [
     "AdoptionStatus",
     "RELATIVE_DEGREE_MAP",
     "SocialFamilyHistoryRepository",
+    # ChartSection
+    "AlertLevel",
+    "SectionIcon",
+    "KeyboardShortcut",
+    "ChartSection",
+    "ChartSectionsResponse",
     # ClinicalAlert
     "ClinicalAlert",
     "AlertAcknowledgment",

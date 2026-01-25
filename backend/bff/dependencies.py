@@ -39,6 +39,7 @@ from services import (
     ImagingService,
     VitalsService,
     SocialFamilyHistoryService,
+    ChartSectionService,
     ClinicalAlertService,
     ClinicalAlertServiceBuilder,
 )
@@ -73,6 +74,7 @@ _problem_detail_service: ProblemDetailService | None = None
 _imaging_service: ImagingService | None = None
 _vitals_service: VitalsService | None = None
 _social_family_history_service: SocialFamilyHistoryService | None = None
+_chart_section_service: ChartSectionService | None = None
 _clinical_alert_service: ClinicalAlertService | None = None
 
 # Track if data has been seeded
@@ -280,6 +282,22 @@ def get_social_family_history_service() -> SocialFamilyHistoryService:
             social_family_history_repo=get_social_family_history_repo(),
         )
     return _social_family_history_service
+
+
+def get_chart_section_service() -> ChartSectionService:
+    global _chart_section_service
+    if _chart_section_service is None:
+        _chart_section_service = ChartSectionService(
+            patient_repo=get_patient_repo(),
+            allergy_repo=get_allergy_repo(),
+            medication_request_repo=get_medication_request_repo(),
+            visit_note_repo=get_visit_note_repo(),
+            lab_result_repo=get_lab_result_repo(),
+            imaging_study_repo=get_imaging_study_repo(),
+            vitals_repo=get_vitals_repo(),
+            social_family_history_repo=get_social_family_history_repo(),
+        )
+    return _chart_section_service
 
 
 def get_clinical_alert_repo() -> ClinicalAlertRepository:

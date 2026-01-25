@@ -21,6 +21,8 @@ from resources import (
     VisitNoteRepository,
     LabResultRepository,
     ImagingStudyRepository,
+    VitalSignRepository,
+    SocialFamilyHistoryRepository,
 )
 from services import (
     ClinicalDecisionService,
@@ -33,6 +35,7 @@ from services import (
     ProblemDetailService,
     ProblemClinicalContextService,
     ImagingService,
+    ChartSectionService,
 )
 from services.data_seeder import seed_all
 
@@ -59,6 +62,8 @@ def repositories():
     visit_note_repo = VisitNoteRepository()
     lab_result_repo = LabResultRepository()
     imaging_study_repo = ImagingStudyRepository()
+    vitals_repo = VitalSignRepository()
+    social_family_history_repo = SocialFamilyHistoryRepository()
 
     # Seed with test data
     seed_all(
@@ -70,6 +75,8 @@ def repositories():
         encounter_repo=encounter_repo,
         visit_note_repo=visit_note_repo,
         imaging_study_repo=imaging_study_repo,
+        vitals_repo=vitals_repo,
+        social_family_history_repo=social_family_history_repo,
     )
 
     return {
@@ -83,6 +90,8 @@ def repositories():
         "visit_note": visit_note_repo,
         "lab_result": lab_result_repo,
         "imaging_study": imaging_study_repo,
+        "vitals": vitals_repo,
+        "social_family_history": social_family_history_repo,
     }
 
 
@@ -174,4 +183,19 @@ def imaging_service(repositories):
     """Create an ImagingService for testing."""
     return ImagingService(
         imaging_study_repo=repositories["imaging_study"],
+    )
+
+
+@pytest.fixture
+def chart_section_service(repositories):
+    """Create a ChartSectionService for testing."""
+    return ChartSectionService(
+        patient_repo=repositories["patient"],
+        allergy_repo=repositories["allergy"],
+        medication_request_repo=repositories["medication_request"],
+        visit_note_repo=repositories["visit_note"],
+        lab_result_repo=repositories["lab_result"],
+        imaging_study_repo=repositories["imaging_study"],
+        vitals_repo=repositories["vitals"],
+        social_family_history_repo=repositories["social_family_history"],
     )
