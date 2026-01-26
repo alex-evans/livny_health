@@ -9,18 +9,32 @@ Livny Health is a modern EHR (Electronic Health Record) system with an ice/Nordi
 ## Tech Stack
 
 - **Frontend**: React 19 + TypeScript + Tailwind CSS + Vite
-- **Backend**: FastAPI (Python) - BFF pattern
+- **Backend**: FastAPI (Python) + PostgreSQL
+- **Database**: PostgreSQL via Docker (see `backend/docker-compose.yml`)
 - **Dev server**: http://localhost:5173 (frontend), http://localhost:8000 (backend)
 
 ## Commands
 
-All commands run from `frontend/`:
-
 ```bash
+make install     # Install frontend and backend dependencies
+make dev         # Start all services (frontend, backend, PostgreSQL)
+make test        # Run all tests
+```
+
+For backend work directly:
+```bash
+cd backend
+source .venv/bin/activate
+uv sync          # Install/sync dependencies
+pytest           # Run tests
+```
+
+For frontend only:
+```bash
+cd frontend
 npm run dev      # Start dev server with HMR
 npm run build    # TypeScript check + production build
 npm run lint     # Run ESLint
-npm run preview  # Preview production build
 ```
 
 ## Reference Files
