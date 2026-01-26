@@ -5,12 +5,16 @@ This is the main API that the frontend talks to.
 It orchestrates calls to services and shapes responses for the frontend.
 """
 
-from fastapi import FastAPI, Query, Path, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
-from bff.dependencies import ensure_data_seeded
+from config import get_settings
+from bff.dependencies import (
+    ensure_data_seeded,
+    ensure_data_seeded_async,
+    set_session_factory,
+)
 from bff.allergies import router as allergies_router
 from bff.patients import router as patients_router
 from bff.medications import router as medications_router
@@ -25,9 +29,27 @@ from bff.alerts import router as alerts_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    # Seed data on startup
-    ensure_data_seeded()
-    yield
+    settings = get_settings()
+
+    if settings.storage_backend == "postgres":
+        # Initialize postgres connection
+        from db import init_db, close_db, get_session_factory
+
+        await init_db()
+        session_factory = await get_session_factory()
+        set_session_factory(session_factory)
+
+        # Seed data asynchronously
+        await ensure_data_seeded_async()
+
+        yield
+
+        # Cleanup postgres connection
+        await close_db()
+    else:
+        # In-memory mode - synchronous seeding
+        ensure_data_seeded()
+        yield
 
 
 app = FastAPI(
@@ -53,5 +75,3 @@ app.include_router(vitals_router)
 app.include_router(social_family_history_router)
 app.include_router(chart_sections_router)
 app.include_router(alerts_router)
-app.include_router(chart_sections_router)
-

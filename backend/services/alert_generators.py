@@ -405,7 +405,7 @@ class ChronicDiseaseAlertGenerator(AlertGenerator):
         # Check for diabetes management
         has_diabetes = any(
             "diabetes" in p.name.lower()
-            for p in patient.problems if p.status == "active"
+            for p in patient.problem_list if p.status == "active"
         )
 
         if has_diabetes:
