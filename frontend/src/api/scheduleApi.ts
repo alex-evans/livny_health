@@ -4,7 +4,7 @@ const BFF_URL = 'http://localhost:8000';
 
 export async function getDailySchedule(
   date: string,
-  providerId: string = 'provider-001'
+  providerId: string = 'provider-002'
 ): Promise<DailySchedule> {
   const params = new URLSearchParams({
     date,
