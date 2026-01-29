@@ -7,3 +7,4 @@ export * from './vitals';
 export * from './socialFamilyHistory';
 export * from './chart';
 export * from './alert';
+export * from './encounter';

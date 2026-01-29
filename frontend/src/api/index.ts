@@ -6,3 +6,17 @@ export { getChartSections } from './chartApi';
 export { mockUsers, mockMedications } from './mockData';
 export { getPatientAlerts, getAlertSummary, acknowledgeAlert, dismissAlert } from './alertApi';
 export type { GetAlertsParams, AcknowledgeAlertParams, DismissAlertParams } from './alertApi';
+export {
+  createEncounter,
+  getEncounter,
+  saveEncounterNote,
+  getNoteVersions,
+  getNoteVersionContent,
+  transitionEncounterStatus,
+  getEncounterAudit,
+  createAddendum,
+  getEncounterByAppointment,
+  VersionConflictException,
+  InvalidTransitionException,
+} from './encounterApi';
+export type { CreateEncounterRequest, SaveNoteRequest, TransitionStatusRequest, CreateAddendumRequest } from './encounterApi';

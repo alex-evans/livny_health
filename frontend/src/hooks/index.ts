@@ -3,3 +3,6 @@ export { useMedicationFreshness } from './useMedicationFreshness';
 export { useKeyboardShortcuts } from './useKeyboardShortcuts';
 export { useChartNavigation } from './useChartNavigation';
 export { useAlerts } from './useAlerts';
+export { useEncounterWorkspace } from './useEncounterWorkspace';
+export { useAutoSave } from './useAutoSave';
+export type { SaveStatus } from './useAutoSave';

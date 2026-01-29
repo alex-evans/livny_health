@@ -287,7 +287,7 @@ class TestEndEncounter:
         # End encounter
         ended = run_async(scheduling_service.end_encounter(encounter.id))
 
-        assert ended.status == EncounterStatus.FINISHED
+        assert ended.status == EncounterStatus.COMPLETED
         assert ended.period.end is not None
 
     def test_end_encounter_updates_appointment(self, scheduling_service):

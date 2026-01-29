@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, ClinicalAlertBanner, AlertBadge, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
-import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts, useAlerts } from '../hooks';
-import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId } from '../types';
+import { NoteComposer, EncounterStatusBanner, EncounterActionBar, VersionConflictModal, AddendumComposer, AuditTrailModal, type NoteComposerRef } from '../components/encounter';
+import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts, useAlerts, useEncounterWorkspace } from '../hooks';
+import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem, getEncounterAudit } from '../api';
+import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId, StatusAuditEntry } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -239,7 +240,43 @@ type ExtendedSection = ChartSectionId | 'prescribe';
 export function PatientChartPage() {
   const navigate = useNavigate();
   const { patientId } = useParams<{ patientId: string }>();
+  const [searchParams] = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Note composer ref for imperative save
+  const noteComposerRef = useRef<NoteComposerRef>(null);
+
+  // Encounter workspace state
+  const {
+    encounter,
+    mode: encounterMode,
+    isNoteEditable,
+    isLoading: isLoadingEncounter,
+    isTransitioning,
+    startEncounter,
+    completeEncounter,
+    signEncounter,
+    reopenEncounter,
+    addAddendum,
+  } = useEncounterWorkspace({
+    patientId: patientId || '',
+    appointmentId,
+  });
+
+  // Encounter UI state
+  const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [versionConflict, setVersionConflict] = useState<{
+    myContent: string;
+    serverContent: string;
+    serverVersion: number;
+  } | null>(null);
+  const [showAddendumModal, setShowAddendumModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<StatusAuditEntry[]>([]);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
 
   // Chart navigation with API data
   const {
@@ -794,6 +831,80 @@ export function PatientChartPage() {
     }
   };
 
+  // Encounter handlers
+  const handleStartVisit = useCallback(async () => {
+    await startEncounter();
+  }, [startEncounter]);
+
+  const handleCompleteEncounter = useCallback(async () => {
+    // Save note first if dirty
+    if (noteComposerRef.current?.isDirty()) {
+      await noteComposerRef.current.save();
+    }
+    await completeEncounter();
+  }, [completeEncounter]);
+
+  const handleSignEncounter = useCallback(async () => {
+    // Save note first if dirty
+    if (noteComposerRef.current?.isDirty()) {
+      await noteComposerRef.current.save();
+    }
+    await signEncounter();
+  }, [signEncounter]);
+
+  const handleReopenEncounter = useCallback(async () => {
+    if (!reopenReason.trim()) return;
+    await reopenEncounter(reopenReason);
+    setShowReopenModal(false);
+    setReopenReason('');
+  }, [reopenEncounter, reopenReason]);
+
+  const handleAddAddendum = useCallback(
+    async (content: string, reason: string) => {
+      await addAddendum(content, reason);
+    },
+    [addAddendum]
+  );
+
+  const handleViewAudit = useCallback(async () => {
+    if (!encounter) return;
+    setShowAuditModal(true);
+    setIsLoadingAudit(true);
+    try {
+      const result = await getEncounterAudit(encounter.id);
+      setAuditEntries(result.entries);
+    } catch (error) {
+      console.error('Failed to fetch audit trail:', error);
+    } finally {
+      setIsLoadingAudit(false);
+    }
+  }, [encounter]);
+
+  const handleVersionConflict = useCallback(
+    (serverContent: string, serverVersion: number) => {
+      const myContent = noteComposerRef.current?.getContent() || '';
+      setVersionConflict({ myContent, serverContent, serverVersion });
+    },
+    []
+  );
+
+  const handleResolveConflictUseMine = useCallback(() => {
+    // The hook will retry save with current content
+    setVersionConflict(null);
+  }, []);
+
+  const handleResolveConflictUseServer = useCallback(() => {
+    // This is handled by the auto-save hook's resolveConflict function
+    setVersionConflict(null);
+  }, []);
+
+  const handleToggleNoteExpand = useCallback(() => {
+    setIsNoteExpanded((prev) => !prev);
+  }, []);
+
+  // Determine if we should show encounter workspace
+  const showEncounterWorkspace = encounter && encounterMode !== 'review';
+
   if (!currentUser) {
     return null;
   }
@@ -1209,8 +1320,26 @@ export function PatientChartPage() {
           </CardContent>
         </Card>
 
+        {/* Encounter Status Banner - shows when encounter is completed or signed */}
+        {encounter && (encounter.status === 'completed' || encounter.status === 'signed') && (
+          <EncounterStatusBanner
+            status={encounter.status}
+            signedByName={encounter.signedByName}
+            signedAt={encounter.signedAt}
+            onReopen={() => setShowReopenModal(true)}
+            onSign={handleSignEncounter}
+            onAddAddendum={() => setShowAddendumModal(true)}
+            onViewAudit={handleViewAudit}
+            isLoading={isTransitioning}
+            className="mb-normal -mx-normal"
+          />
+        )}
+
         {/* Two Column Layout: Left Nav + Main Content */}
-        <div className="grid grid-cols-12 gap-normal">
+        <div className={cn(
+          'grid grid-cols-12 gap-normal',
+          showEncounterWorkspace && 'pb-[200px]' // Padding for fixed note composer
+        )}>
           {/* Left Sidebar Navigation */}
           <div className="col-span-3">
             <ChartNavigation
@@ -1222,6 +1351,26 @@ export function PatientChartPage() {
               prescriptionCount={prescription.length}
               isPrescribeActive={activeSection === 'prescribe'}
             />
+
+            {/* Start Visit Button - shows when in review mode */}
+            {encounterMode === 'review' && !isLoadingEncounter && (
+              <Card className="mt-normal">
+                <CardContent>
+                  <button
+                    onClick={handleStartVisit}
+                    disabled={isTransitioning}
+                    className={cn(
+                      'w-full px-4 py-3 text-[15px] font-medium rounded-md transition-colors',
+                      'bg-glacier-blue text-white',
+                      'hover:bg-deep-ice',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
+                    )}
+                  >
+                    {isTransitioning ? 'Starting...' : 'Start Visit'}
+                  </button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Main Content Area */}
@@ -1238,6 +1387,30 @@ export function PatientChartPage() {
           </div>
         </div>
       </div>
+
+      {/* Fixed Note Composer - shows when encounter is active */}
+      {showEncounterWorkspace && encounter && (
+        <div className="fixed bottom-0 left-0 right-0 z-10 shadow-card-hover">
+          <NoteComposer
+            ref={noteComposerRef}
+            encounterId={encounter.id}
+            initialContent={encounter.noteContent || ''}
+            initialVersion={encounter.noteVersion}
+            isExpanded={isNoteExpanded}
+            onToggleExpand={handleToggleNoteExpand}
+            onConflict={handleVersionConflict}
+            readOnly={!isNoteEditable}
+          />
+          <EncounterActionBar
+            status={encounter.status}
+            onComplete={handleCompleteEncounter}
+            onSign={handleSignEncounter}
+            onReopen={() => setShowReopenModal(true)}
+            onAddAddendum={() => setShowAddendumModal(true)}
+            isLoading={isTransitioning}
+          />
+        </div>
+      )}
 
       {/* Modals */}
       {allergyAlert && allergyAlert.blocked && (
@@ -1275,6 +1448,92 @@ export function PatientChartPage() {
           isLoading={isLoadingProblemDetail}
           error={problemDetailError}
         />
+      )}
+
+      {/* Encounter Modals */}
+      {versionConflict && (
+        <VersionConflictModal
+          isOpen={true}
+          myContent={versionConflict.myContent}
+          serverContent={versionConflict.serverContent}
+          serverVersion={versionConflict.serverVersion}
+          onUseMine={handleResolveConflictUseMine}
+          onUseServer={handleResolveConflictUseServer}
+          onClose={() => setVersionConflict(null)}
+        />
+      )}
+
+      <AddendumComposer
+        isOpen={showAddendumModal}
+        onSubmit={handleAddAddendum}
+        onClose={() => setShowAddendumModal(false)}
+      />
+
+      <AuditTrailModal
+        isOpen={showAuditModal}
+        entries={auditEntries}
+        isLoading={isLoadingAudit}
+        onClose={() => setShowAuditModal(false)}
+      />
+
+      {/* Reopen Encounter Modal */}
+      {showReopenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-deep-ice/50"
+            onClick={() => setShowReopenModal(false)}
+          />
+          <div className="relative bg-white rounded-lg shadow-card-hover w-full max-w-md mx-4">
+            <div className="px-comfortable py-normal border-b border-frost">
+              <h2 className="text-[18px] font-semibold text-text-primary">
+                Reopen Encounter
+              </h2>
+            </div>
+            <div className="px-comfortable py-normal">
+              <p className="text-[13px] text-text-secondary mb-normal">
+                Please provide a reason for reopening this encounter. This will be
+                recorded in the audit trail.
+              </p>
+              <textarea
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                placeholder="Reason for reopening..."
+                rows={3}
+                className={cn(
+                  'w-full px-3 py-2 text-[15px] border border-arctic rounded-md resize-none',
+                  'focus:outline-none focus:border-glacier-blue focus:ring-[3px] focus:ring-glacier-blue/10'
+                )}
+              />
+            </div>
+            <div className="flex items-center justify-end gap-2 px-comfortable py-normal border-t border-frost">
+              <button
+                onClick={() => {
+                  setShowReopenModal(false);
+                  setReopenReason('');
+                }}
+                className={cn(
+                  'px-4 py-2 text-[13px] font-medium rounded-md transition-colors',
+                  'border border-arctic text-text-primary',
+                  'hover:bg-frost'
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReopenEncounter}
+                disabled={!reopenReason.trim() || isTransitioning}
+                className={cn(
+                  'px-4 py-2 text-[13px] font-medium rounded-md transition-colors',
+                  'bg-glacier-blue text-white',
+                  'hover:bg-deep-ice',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                {isTransitioning ? 'Reopening...' : 'Reopen Encounter'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

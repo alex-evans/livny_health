@@ -178,7 +178,7 @@ class TestSchedulingService:
         # End the encounter
         ended = run_async(services["scheduling"].end_encounter(encounter.id))
         from resources import EncounterStatus
-        assert ended.status == EncounterStatus.FINISHED
+        assert ended.status == EncounterStatus.COMPLETED
 
     def test_end_encounter_not_found(self, services):
         """Should raise error for unknown encounter"""

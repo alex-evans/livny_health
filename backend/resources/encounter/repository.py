@@ -65,7 +65,7 @@ class EncounterRepository(InMemoryRepository[Encounter]):
         """Get the current active encounter for a patient."""
         results = await self.list(
             patient_id=patient_id,
-            status=[EncounterStatus.IN_PROGRESS.value, EncounterStatus.ARRIVED.value],
+            status=[EncounterStatus.IN_PROGRESS.value],
         )
         return results[0] if results else None
 

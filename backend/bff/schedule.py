@@ -15,7 +15,7 @@ router = APIRouter(prefix='/schedule', tags=['schedule'])
 @router.get("/")
 async def get_schedule(
     date: str = Query(..., description="Date in YYYY-MM-DD format"),
-    provider_id: str = Query("provider-002", description="The provider ID"),
+    provider_id: str = Query("provider-001", description="The provider ID"),
 ):
     """Get the daily schedule for a provider."""
     service = get_scheduling_service()

@@ -121,7 +121,7 @@ class TestPhysicianVisitWorkflow:
 
         # Verify final state
         final_encounter = run_async(repositories["encounter"].get(encounter.id))
-        assert final_encounter.status == EncounterStatus.FINISHED
+        assert final_encounter.status == EncounterStatus.COMPLETED
 
         final_appointment = run_async(repositories["appointment"].get(appointment_id))
         assert final_appointment.status == AppointmentStatus.FULFILLED
@@ -476,7 +476,7 @@ class TestEdgeCaseWorkflows:
 
         # Verify first encounter completed
         enc1_final = run_async(repositories["encounter"].get(enc1.id))
-        assert enc1_final.status == EncounterStatus.FINISHED
+        assert enc1_final.status == EncounterStatus.COMPLETED
 
         # Second encounter (urgent follow-up)
         appt2 = run_async(services["scheduling"].create_appointment(

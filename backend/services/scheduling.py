@@ -244,7 +244,7 @@ class SchedulingService:
         if not encounter:
             raise ValueError(f"Encounter {encounter_id} not found")
 
-        encounter.status = EncounterStatus.FINISHED
+        encounter.status = EncounterStatus.COMPLETED
         if encounter.period:
             encounter.period.end = datetime.utcnow()
 

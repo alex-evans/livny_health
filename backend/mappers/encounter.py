@@ -54,6 +54,20 @@ class EncounterMapper(Mapper[Encounter, EncounterORM]):
             ],
             chief_complaint=domain.chief_complaint,
             appointment_id=domain.appointment.id if domain.appointment else None,
+            # Note fields
+            note_content=domain.note_content,
+            note_version=domain.note_version,
+            note_word_count=domain.note_word_count,
+            note_updated_at=domain.note_updated_at,
+            # Workflow timestamps
+            opened_at=domain.opened_at,
+            completed_at=domain.completed_at,
+            signed_at=domain.signed_at,
+            reopened_at=domain.reopened_at,
+            # Signature tracking
+            signed_by_id=domain.signed_by_id,
+            signed_by_name=domain.signed_by_name,
+            # Metadata
             meta_version_id=domain.meta_version_id,
             meta_last_updated=domain.meta_last_updated,
         )
@@ -64,7 +78,7 @@ class EncounterMapper(Mapper[Encounter, EncounterORM]):
         try:
             status = EncounterStatus(orm.status)
         except ValueError:
-            status = EncounterStatus.UNKNOWN
+            status = EncounterStatus.SCHEDULED
 
         # Parse encounter class
         try:
@@ -129,6 +143,20 @@ class EncounterMapper(Mapper[Encounter, EncounterORM]):
             appointment=Reference(reference=f"Appointment/{orm.appointment_id}")
             if orm.appointment_id
             else None,
+            # Note fields
+            note_content=orm.note_content,
+            note_version=orm.note_version,
+            note_word_count=orm.note_word_count,
+            note_updated_at=orm.note_updated_at,
+            # Workflow timestamps
+            opened_at=orm.opened_at,
+            completed_at=orm.completed_at,
+            signed_at=orm.signed_at,
+            reopened_at=orm.reopened_at,
+            # Signature tracking
+            signed_by_id=orm.signed_by_id,
+            signed_by_name=orm.signed_by_name,
+            # Metadata
             meta_version_id=orm.meta_version_id,
             meta_last_updated=orm.meta_last_updated,
         )

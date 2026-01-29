@@ -115,7 +115,7 @@ interface AppointmentCardProps {
   appointment: Appointment;
   isNext: boolean;
   isCurrent: boolean;
-  onSelect: (patientId: string) => void;
+  onSelect: (patientId: string, appointmentId?: string) => void;
 }
 
 function AppointmentCard({ appointment, isNext, isCurrent, onSelect }: AppointmentCardProps) {
@@ -126,7 +126,7 @@ function AppointmentCard({ appointment, isNext, isCurrent, onSelect }: Appointme
   return (
     <Card
       hoverable={!isCanceled}
-      onClick={isCanceled ? undefined : () => onSelect(appointment.patient.id)}
+      onClick={isCanceled ? undefined : () => onSelect(appointment.patient.id, appointment.id)}
       className={cn(
         'relative',
         isPast && 'opacity-60',
@@ -289,8 +289,11 @@ export function DailySchedulePage() {
     setSelectedDate(e.target.value);
   };
 
-  const handlePatientSelect = (patientId: string) => {
-    navigate(`/patients/${patientId}`);
+  const handlePatientSelect = (patientId: string, appointmentId?: string) => {
+    const url = appointmentId
+      ? `/patients/${patientId}?appointmentId=${appointmentId}`
+      : `/patients/${patientId}`;
+    navigate(url);
   };
 
   const handleLogout = () => {
@@ -323,7 +326,7 @@ export function DailySchedulePage() {
     } else if (e.key === 'Enter') {
       const appt = appointments[idx];
       if (appt.status !== 'canceled') {
-        handlePatientSelect(appt.patient.id);
+        handlePatientSelect(appt.patient.id, appt.id);
       }
     }
   };

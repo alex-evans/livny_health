@@ -30,6 +30,8 @@ from resources import (
     VitalSignRepository,
     SocialFamilyHistoryRepository,
     ClinicalAlertRepository,
+    EncounterNoteVersionRepository,
+    EncounterStatusHistoryRepository,
 )
 
 # PostgreSQL repository imports
@@ -52,6 +54,12 @@ from resources.social_family_history.postgres_repository import (
     PostgresSocialFamilyHistoryRepository,
 )
 from resources.clinical_alert.postgres_repository import PostgresClinicalAlertRepository
+from resources.encounter_note_version.postgres_repository import (
+    PostgresEncounterNoteVersionRepository,
+)
+from resources.encounter_status_history.postgres_repository import (
+    PostgresEncounterStatusHistoryRepository,
+)
 
 # Service imports
 from services import (
@@ -70,6 +78,8 @@ from services import (
     ChartSectionService,
     ClinicalAlertService,
     ClinicalAlertServiceBuilder,
+    EncounterNoteService,
+    EncounterStatusService,
 )
 from services.data_seeder import seed_all
 
@@ -92,6 +102,8 @@ _imaging_study_repo = None
 _vitals_repo = None
 _social_family_history_repo = None
 _clinical_alert_repo = None
+_encounter_note_version_repo = None
+_encounter_status_history_repo = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -108,6 +120,8 @@ _vitals_service: VitalsService | None = None
 _social_family_history_service: SocialFamilyHistoryService | None = None
 _chart_section_service: ChartSectionService | None = None
 _clinical_alert_service: ClinicalAlertService | None = None
+_encounter_note_service: EncounterNoteService | None = None
+_encounter_status_service: EncounterStatusService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -263,6 +277,30 @@ def get_clinical_alert_repo():
     return _clinical_alert_repo
 
 
+def get_encounter_note_version_repo():
+    global _encounter_note_version_repo
+    if _encounter_note_version_repo is None:
+        if _is_postgres():
+            _encounter_note_version_repo = PostgresEncounterNoteVersionRepository(
+                _session_factory
+            )
+        else:
+            _encounter_note_version_repo = EncounterNoteVersionRepository()
+    return _encounter_note_version_repo
+
+
+def get_encounter_status_history_repo():
+    global _encounter_status_history_repo
+    if _encounter_status_history_repo is None:
+        if _is_postgres():
+            _encounter_status_history_repo = PostgresEncounterStatusHistoryRepository(
+                _session_factory
+            )
+        else:
+            _encounter_status_history_repo = EncounterStatusHistoryRepository()
+    return _encounter_status_history_repo
+
+
 def get_clinical_decision_service() -> ClinicalDecisionService:
     global _clinical_decision_service
     if _clinical_decision_service is None:
@@ -412,6 +450,33 @@ def get_clinical_alert_service() -> ClinicalAlertService:
     return _clinical_alert_service
 
 
+def get_encounter_note_service() -> EncounterNoteService:
+    global _encounter_note_service
+    if _encounter_note_service is None:
+        _encounter_note_service = EncounterNoteService(
+            encounter_repo=get_encounter_repo(),
+            encounter_note_version_repo=get_encounter_note_version_repo(),
+            patient_repo=get_patient_repo(),
+            allergy_repo=get_allergy_repo(),
+            medication_request_repo=get_medication_request_repo(),
+            vitals_repo=get_vitals_repo(),
+            lab_result_repo=get_lab_result_repo(),
+            visit_note_repo=get_visit_note_repo(),
+        )
+    return _encounter_note_service
+
+
+def get_encounter_status_service() -> EncounterStatusService:
+    global _encounter_status_service
+    if _encounter_status_service is None:
+        _encounter_status_service = EncounterStatusService(
+            encounter_repo=get_encounter_repo(),
+            status_history_repo=get_encounter_status_history_repo(),
+            encounter_note_version_repo=get_encounter_note_version_repo(),
+        )
+    return _encounter_status_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -459,12 +524,14 @@ def reset_singletons() -> None:
     global _medication_request_repo, _encounter_repo, _appointment_repo
     global _lab_result_repo, _visit_note_repo, _imaging_study_repo, _vitals_repo
     global _social_family_history_repo, _clinical_alert_repo
+    global _encounter_note_version_repo, _encounter_status_history_repo
     global _clinical_decision_service, _prescribing_service, _scheduling_service
     global _medication_search_service, _lab_history_service, _visit_history_service
     global _problem_list_service, _problem_clinical_context_service
     global _problem_detail_service, _imaging_service, _vitals_service
     global _social_family_history_service, _chart_section_service
-    global _clinical_alert_service, _data_seeded
+    global _clinical_alert_service, _encounter_note_service, _encounter_status_service
+    global _data_seeded
 
     _patient_repo = None
     _practitioner_repo = None
@@ -479,6 +546,8 @@ def reset_singletons() -> None:
     _vitals_repo = None
     _social_family_history_repo = None
     _clinical_alert_repo = None
+    _encounter_note_version_repo = None
+    _encounter_status_history_repo = None
     _clinical_decision_service = None
     _prescribing_service = None
     _scheduling_service = None
@@ -493,4 +562,6 @@ def reset_singletons() -> None:
     _social_family_history_service = None
     _chart_section_service = None
     _clinical_alert_service = None
+    _encounter_note_service = None
+    _encounter_status_service = None
     _data_seeded = False
