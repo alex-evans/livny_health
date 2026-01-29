@@ -4,7 +4,7 @@ Encounter ORM model.
 
 from datetime import datetime
 
-from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy import String, DateTime, ForeignKey, Text, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,7 +20,7 @@ class EncounterORM(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
 
     # Status
-    status: Mapped[str] = mapped_column(String(50), default="planned", index=True)
+    status: Mapped[str] = mapped_column(String(50), default="scheduled", index=True)
 
     # Classification
     encounter_class: Mapped[str] = mapped_column(String(20), default="AMB")
@@ -45,6 +45,22 @@ class EncounterORM(Base):
 
     # Link to appointment
     appointment_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Note fields (migration 002)
+    note_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    note_version: Mapped[int] = mapped_column(Integer, default=1)
+    note_word_count: Mapped[int] = mapped_column(Integer, default=0)
+    note_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Workflow timestamps (migration 003)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reopened_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Signature tracking (migration 003)
+    signed_by_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    signed_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Metadata
     meta_version_id: Mapped[str] = mapped_column(String(10), default="1")

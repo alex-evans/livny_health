@@ -134,6 +134,15 @@ from .clinical_alert import (
     AlertStatus,
     ClinicalAlertRepository,
 )
+from .encounter_note_version import (
+    EncounterNoteVersion,
+    SaveType,
+    EncounterNoteVersionRepository,
+)
+from .encounter_status_history import (
+    EncounterStatusHistory,
+    EncounterStatusHistoryRepository,
+)
 
 __all__ = [
     # Patient
@@ -258,4 +267,11 @@ __all__ = [
     "AlertSeverity",
     "AlertStatus",
     "ClinicalAlertRepository",
+    # EncounterNoteVersion
+    "EncounterNoteVersion",
+    "SaveType",
+    "EncounterNoteVersionRepository",
+    # EncounterStatusHistory
+    "EncounterStatusHistory",
+    "EncounterStatusHistoryRepository",
 ]

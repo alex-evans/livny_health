@@ -307,7 +307,7 @@ class TestSchedulingServiceIntegration:
 
         # Verify encounter updated
         repo_enc = run_async(repositories["encounter"].get(encounter.id))
-        assert repo_enc.status == EncounterStatus.FINISHED
+        assert repo_enc.status == EncounterStatus.COMPLETED
         assert repo_enc.period.end is not None
 
         # Verify appointment updated

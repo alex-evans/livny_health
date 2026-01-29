@@ -20,16 +20,11 @@ from resources.core import (
 
 
 class EncounterStatus(str, Enum):
-    """Status of the encounter."""
-    PLANNED = "planned"
-    ARRIVED = "arrived"
-    TRIAGED = "triaged"
-    IN_PROGRESS = "in-progress"
-    ON_HOLD = "on-hold"
-    FINISHED = "finished"
-    CANCELLED = "cancelled"
-    ENTERED_IN_ERROR = "entered-in-error"
-    UNKNOWN = "unknown"
+    """Clinical workflow status of the encounter."""
+    SCHEDULED = "scheduled"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    SIGNED = "signed"
 
 
 class EncounterClass(str, Enum):
@@ -58,7 +53,7 @@ class Encounter(DomainResource):
     resource_type: ClassVar[str] = "Encounter"
 
     # Status
-    status: EncounterStatus = EncounterStatus.PLANNED
+    status: EncounterStatus = EncounterStatus.SCHEDULED
 
     # Classification
     encounter_class: EncounterClass = EncounterClass.AMBULATORY
@@ -81,6 +76,22 @@ class Encounter(DomainResource):
 
     # Link to appointment that spawned this encounter
     appointment: Reference | None = None
+
+    # Note fields
+    note_content: str | None = None
+    note_version: int = 1
+    note_word_count: int = 0
+    note_updated_at: datetime | None = None
+
+    # Workflow timestamps
+    opened_at: datetime | None = None
+    completed_at: datetime | None = None
+    signed_at: datetime | None = None
+    reopened_at: datetime | None = None
+
+    # Signature tracking
+    signed_by_id: str | None = None
+    signed_by_name: str | None = None
 
     @property
     def patient_id(self) -> str:
@@ -139,17 +150,30 @@ class Encounter(DomainResource):
             "chiefComplaint": self.chief_complaint,
             "startTime": self.start_time.isoformat() if self.start_time else None,
             "endTime": self.end_time.isoformat() if self.end_time else None,
+            # Note fields
+            "noteContent": self.note_content,
+            "noteVersion": self.note_version,
+            "noteWordCount": self.note_word_count,
+            "noteUpdatedAt": self.note_updated_at.isoformat() if self.note_updated_at else None,
+            # Workflow timestamps
+            "openedAt": self.opened_at.isoformat() if self.opened_at else None,
+            "completedAt": self.completed_at.isoformat() if self.completed_at else None,
+            "signedAt": self.signed_at.isoformat() if self.signed_at else None,
+            "reopenedAt": self.reopened_at.isoformat() if self.reopened_at else None,
+            # Signature tracking
+            "signedById": self.signed_by_id,
+            "signedByName": self.signed_by_name,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Encounter":
         """Create Encounter from dictionary."""
         # Parse status
-        status_str = data.get("status", "planned").lower().replace("_", "-")
+        status_str = data.get("status", "scheduled").lower().replace("-", "_")
         try:
             status = EncounterStatus(status_str)
         except ValueError:
-            status = EncounterStatus.UNKNOWN
+            status = EncounterStatus.SCHEDULED
 
         # Parse encounter class
         enc_class_str = data.get("class", "AMB").upper()
@@ -175,6 +199,10 @@ class Encounter(DomainResource):
         if not subject_ref.startswith("Patient/"):
             subject_ref = f"Patient/{subject_ref}"
 
+        # Parse datetime fields
+        def parse_datetime(value: str | None) -> datetime | None:
+            return datetime.fromisoformat(value) if value else None
+
         return cls(
             id=data["id"],
             status=status,
@@ -183,4 +211,14 @@ class Encounter(DomainResource):
             subject=Reference(reference=subject_ref),
             period=period,
             chief_complaint=data.get("chiefComplaint"),
+            note_content=data.get("noteContent"),
+            note_version=data.get("noteVersion", 1),
+            note_word_count=data.get("noteWordCount", 0),
+            note_updated_at=parse_datetime(data.get("noteUpdatedAt")),
+            opened_at=parse_datetime(data.get("openedAt")),
+            completed_at=parse_datetime(data.get("completedAt")),
+            signed_at=parse_datetime(data.get("signedAt")),
+            reopened_at=parse_datetime(data.get("reopenedAt")),
+            signed_by_id=data.get("signedById"),
+            signed_by_name=data.get("signedByName"),
         )

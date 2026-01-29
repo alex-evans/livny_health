@@ -52,10 +52,10 @@ class TestEncounterRepository:
                 period=Period(start=base_date),
                 appointment=Reference(reference="Appointment/appt-001"),
             ),
-            # Finished encounter for patient-001
+            # Completed encounter for patient-001
             Encounter(
                 id="enc-002",
-                status=EncounterStatus.FINISHED,
+                status=EncounterStatus.COMPLETED,
                 encounter_class=EncounterClass.AMBULATORY,
                 subject=Reference(reference="Patient/patient-001"),
                 participants=[
@@ -67,10 +67,10 @@ class TestEncounterRepository:
                 period=Period(start=datetime(2024, 1, 10, 10, 0, 0), end=datetime(2024, 1, 10, 10, 30, 0)),
                 appointment=Reference(reference="Appointment/appt-002"),
             ),
-            # Arrived encounter for patient-002
+            # Scheduled encounter for patient-002
             Encounter(
                 id="enc-003",
-                status=EncounterStatus.ARRIVED,
+                status=EncounterStatus.SCHEDULED,
                 encounter_class=EncounterClass.AMBULATORY,
                 subject=Reference(reference="Patient/patient-002"),
                 participants=[
@@ -81,10 +81,10 @@ class TestEncounterRepository:
                 ],
                 period=Period(start=base_date),
             ),
-            # Cancelled encounter
+            # Signed encounter
             Encounter(
                 id="enc-004",
-                status=EncounterStatus.CANCELLED,
+                status=EncounterStatus.SIGNED,
                 encounter_class=EncounterClass.AMBULATORY,
                 subject=Reference(reference="Patient/patient-001"),
                 period=Period(start=datetime(2024, 1, 20, 14, 0, 0)),
@@ -107,13 +107,13 @@ class TestEncounterRepository:
 
     def test_list_filter_by_status_string(self, repo, test_encounters):
         """list filters by single status string."""
-        result = run_async(repo.list(status="finished"))
+        result = run_async(repo.list(status="completed"))
         assert len(result) == 1
         assert result[0].id == "enc-002"
 
     def test_list_filter_by_status_list(self, repo, test_encounters):
         """list filters by multiple statuses."""
-        result = run_async(repo.list(status=["in-progress", "arrived"]))
+        result = run_async(repo.list(status=["in_progress", "scheduled"]))
         assert len(result) == 2
         ids = {e.id for e in result}
         assert ids == {"enc-001", "enc-003"}
@@ -144,7 +144,7 @@ class TestEncounterRepository:
 
     def test_list_multiple_filters(self, repo, test_encounters):
         """list with multiple filters applies all."""
-        result = run_async(repo.list(patient_id="patient-001", status="finished"))
+        result = run_async(repo.list(patient_id="patient-001", status="completed"))
         assert len(result) == 1
         assert result[0].id == "enc-002"
 
@@ -154,11 +154,10 @@ class TestEncounterRepository:
         assert result is not None
         assert result.id == "enc-001"
 
-    def test_get_active_for_patient_arrived(self, repo, test_encounters):
-        """get_active_for_patient returns arrived encounter."""
+    def test_get_active_for_patient_no_active(self, repo, test_encounters):
+        """get_active_for_patient returns None for patient with only scheduled encounter."""
         result = run_async(repo.get_active_for_patient("patient-002"))
-        assert result is not None
-        assert result.id == "enc-003"
+        assert result is None
 
     def test_get_active_for_patient_none(self, repo, test_encounters):
         """get_active_for_patient returns None when no active encounter."""
@@ -201,7 +200,7 @@ class TestEncounterRepository:
         """create adds a new encounter."""
         new_enc = Encounter(
             id="enc-new",
-            status=EncounterStatus.PLANNED,
+            status=EncounterStatus.SCHEDULED,
             subject=Reference(reference="Patient/patient-new"),
         )
         result = run_async(repo.create(new_enc))
@@ -214,13 +213,13 @@ class TestEncounterRepository:
         """update modifies an existing encounter."""
         updated = Encounter(
             id="enc-001",
-            status=EncounterStatus.FINISHED,
+            status=EncounterStatus.COMPLETED,
             subject=Reference(reference="Patient/patient-001"),
             period=Period(start=datetime(2024, 1, 15, 9, 0, 0), end=datetime(2024, 1, 15, 9, 30, 0)),
         )
         result = run_async(repo.update("enc-001", updated))
         assert result is not None
-        assert result.status == EncounterStatus.FINISHED
+        assert result.status == EncounterStatus.COMPLETED
         assert result.period.end is not None
 
     def test_delete(self, repo, test_encounters):

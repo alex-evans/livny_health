@@ -87,6 +87,22 @@ from .alert_thresholds import (
     get_lab_severity,
     get_vital_severity,
 )
+from .encounter_note_service import (
+    EncounterNoteService,
+    EncounterWithContext,
+    NoteSaveResult,
+    NoteVersionSummary,
+    PatientSummary,
+    EncounterContext,
+    VersionConflictError,
+    EncounterNotFoundError,
+)
+from .encounter_status_service import (
+    EncounterStatusService,
+    StatusTransitionResult,
+    AddendumResult,
+    InvalidStatusTransitionError,
+)
 
 __all__ = [
     # Clinical Decision
@@ -154,4 +170,18 @@ __all__ = [
     "SCREENING_INTERVALS",
     "get_lab_severity",
     "get_vital_severity",
+    # Encounter Note Service
+    "EncounterNoteService",
+    "EncounterWithContext",
+    "NoteSaveResult",
+    "NoteVersionSummary",
+    "PatientSummary",
+    "EncounterContext",
+    "VersionConflictError",
+    "EncounterNotFoundError",
+    # Encounter Status Service
+    "EncounterStatusService",
+    "StatusTransitionResult",
+    "AddendumResult",
+    "InvalidStatusTransitionError",
 ]
