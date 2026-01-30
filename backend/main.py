@@ -25,6 +25,7 @@ from bff.social_family_history import router as social_family_history_router
 from bff.chart_sections import router as chart_sections_router
 from bff.alerts import router as alerts_router
 from bff.encounters import router as encounters_router, appointment_router, patient_router as patient_encounters_router
+from bff.patient_context import router as patient_context_router
 
 
 @asynccontextmanager
@@ -79,3 +80,4 @@ app.include_router(alerts_router)
 app.include_router(encounters_router)
 app.include_router(appointment_router)
 app.include_router(patient_encounters_router)
+app.include_router(patient_context_router)

@@ -4,9 +4,10 @@ import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWar
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
 import { NoteComposer, EncounterStatusBanner, EncounterActionBar, VersionConflictModal, AddendumComposer, AuditTrailModal, type NoteComposerRef } from '../components/encounter';
+// PatientContextContainer removed - navigation provides direct access to each section
 import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts, useAlerts, useEncounterWorkspace } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem, getEncounterAudit } from '../api';
-import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId, StatusAuditEntry } from '../types';
+import type { MedicationSearchResult, SelectedMedication, User, AllergyAlert, DrugInteraction, ActiveMedication, Problem, ProblemDetailResponse, ChartSectionId, StatusAuditEntry, ContextMode } from '../types';
 import type { MedicationForm } from '../utils/quantityCalculator';
 import { cn } from '../utils/cn';
 import {
@@ -266,6 +267,7 @@ export function PatientChartPage() {
 
   // Encounter UI state
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [isNoteMinimized, setIsNoteMinimized] = useState(false);
   const [versionConflict, setVersionConflict] = useState<{
     myContent: string;
     serverContent: string;
@@ -317,6 +319,14 @@ export function PatientChartPage() {
     removeMedication,
     timeSinceUpdate,
   } = useMedicationFreshness(patientId);
+
+  // Context mode - kept for potential future use
+  const _contextMode: ContextMode = isNoteExpanded
+    ? 'expanded'
+    : encounterMode === 'documentation'
+      ? 'documentation'
+      : 'review';
+  void _contextMode; // Suppress unused variable warning
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MedicationSearchResult[]>([]);
@@ -902,6 +912,10 @@ export function PatientChartPage() {
     setIsNoteExpanded((prev) => !prev);
   }, []);
 
+  const handleToggleNoteMinimize = useCallback(() => {
+    setIsNoteMinimized((prev) => !prev);
+  }, []);
+
   // Determine if we should show encounter workspace
   const showEncounterWorkspace = encounter && encounterMode !== 'review';
 
@@ -911,7 +925,7 @@ export function PatientChartPage() {
 
   if (isLoadingPatient) {
     return (
-      <div className="min-h-screen bg-snow flex items-center justify-center">
+      <div className="h-screen bg-snow flex items-center justify-center">
         <p className="text-[15px] text-text-secondary">Loading patient...</p>
       </div>
     );
@@ -919,7 +933,7 @@ export function PatientChartPage() {
 
   if (patientError || !patient) {
     return (
-      <div className="min-h-screen bg-snow flex items-center justify-center">
+      <div className="h-screen bg-snow flex items-center justify-center">
         <div className="text-center">
           <p className="text-[15px] text-critical mb-normal">{patientError || 'Patient not found'}</p>
           <Button variant="secondary" onClick={() => navigate('/')}>
@@ -1274,8 +1288,9 @@ export function PatientChartPage() {
   );
 
   return (
-    <div className="min-h-screen bg-snow">
-      <div className="max-w-7xl mx-auto px-normal py-normal">
+    <div className="h-screen bg-snow flex flex-col overflow-hidden">
+      {/* Fixed Header Area */}
+      <div className="flex-shrink-0 max-w-7xl mx-auto w-full px-normal pt-normal">
         {/* Patient Info Card - Compact Header */}
         <Card className="mb-normal">
           <CardContent>
@@ -1334,14 +1349,14 @@ export function PatientChartPage() {
             className="mb-normal -mx-normal"
           />
         )}
+      </div>
 
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-normal pb-normal">
         {/* Two Column Layout: Left Nav + Main Content */}
-        <div className={cn(
-          'grid grid-cols-12 gap-normal',
-          showEncounterWorkspace && 'pb-[200px]' // Padding for fixed note composer
-        )}>
-          {/* Left Sidebar Navigation */}
-          <div className="col-span-3">
+        <div className="grid grid-cols-12 gap-normal h-full">
+          {/* Left Sidebar Navigation - Scrollable */}
+          <div className="col-span-3 overflow-y-auto">
             <ChartNavigation
               sections={chartSections}
               activeSection={activeSection === 'prescribe' ? 'medications' : activeSection}
@@ -1351,30 +1366,10 @@ export function PatientChartPage() {
               prescriptionCount={prescription.length}
               isPrescribeActive={activeSection === 'prescribe'}
             />
-
-            {/* Start Visit Button - shows when in review mode */}
-            {encounterMode === 'review' && !isLoadingEncounter && (
-              <Card className="mt-normal">
-                <CardContent>
-                  <button
-                    onClick={handleStartVisit}
-                    disabled={isTransitioning}
-                    className={cn(
-                      'w-full px-4 py-3 text-[15px] font-medium rounded-md transition-colors',
-                      'bg-glacier-blue text-white',
-                      'hover:bg-deep-ice',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
-                  >
-                    {isTransitioning ? 'Starting...' : 'Start Visit'}
-                  </button>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* Main Content Area */}
-          <div className="col-span-9">
+          {/* Main Content Area - Scrollable */}
+          <div className="col-span-9 overflow-y-auto">
             {/* Clinical Alerts Banner */}
             {!isLoadingAlerts && alerts.length > 0 && (
               <ClinicalAlertBanner
@@ -1388,27 +1383,58 @@ export function PatientChartPage() {
         </div>
       </div>
 
-      {/* Fixed Note Composer - shows when encounter is active */}
+      {/* Start Visit Footer - shows when in review mode */}
+      {encounterMode === 'review' && !isLoadingEncounter && (
+        <div className="flex-shrink-0 max-w-7xl mx-auto w-full px-normal pb-normal">
+          <Card className="shadow-card-hover border-t-2 border-glacier-blue">
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <p className="text-[15px] text-text-secondary">
+                  Ready to document this visit?
+                </p>
+                <button
+                  onClick={handleStartVisit}
+                  disabled={isTransitioning}
+                  className={cn(
+                    'px-6 py-3 text-[15px] font-medium rounded-md transition-colors',
+                    'bg-glacier-blue text-white',
+                    'hover:bg-deep-ice',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                >
+                  {isTransitioning ? 'Starting...' : 'Start Visit'}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Note Composer - shows when encounter is active */}
       {showEncounterWorkspace && encounter && (
-        <div className="fixed bottom-0 left-0 right-0 z-10 shadow-card-hover">
-          <NoteComposer
-            ref={noteComposerRef}
-            encounterId={encounter.id}
-            initialContent={encounter.noteContent || ''}
-            initialVersion={encounter.noteVersion}
-            isExpanded={isNoteExpanded}
-            onToggleExpand={handleToggleNoteExpand}
-            onConflict={handleVersionConflict}
-            readOnly={!isNoteEditable}
-          />
-          <EncounterActionBar
-            status={encounter.status}
-            onComplete={handleCompleteEncounter}
-            onSign={handleSignEncounter}
-            onReopen={() => setShowReopenModal(true)}
-            onAddAddendum={() => setShowAddendumModal(true)}
-            isLoading={isTransitioning}
-          />
+        <div className="flex-shrink-0 max-w-7xl mx-auto w-full px-normal pb-normal">
+          <Card className="shadow-card-hover overflow-hidden border-t-2 border-glacier-blue">
+            <NoteComposer
+              ref={noteComposerRef}
+              encounterId={encounter.id}
+              initialContent={encounter.noteContent || ''}
+              initialVersion={encounter.noteVersion}
+              isExpanded={isNoteExpanded}
+              isMinimized={isNoteMinimized}
+              onToggleExpand={handleToggleNoteExpand}
+              onToggleMinimize={handleToggleNoteMinimize}
+              onConflict={handleVersionConflict}
+              readOnly={!isNoteEditable}
+            />
+            <EncounterActionBar
+              status={encounter.status}
+              onComplete={handleCompleteEncounter}
+              onSign={handleSignEncounter}
+              onReopen={() => setShowReopenModal(true)}
+              onAddAddendum={() => setShowAddendumModal(true)}
+              isLoading={isTransitioning}
+            />
+          </Card>
         </div>
       )}
 

@@ -6,3 +6,4 @@ export { useAlerts } from './useAlerts';
 export { useEncounterWorkspace } from './useEncounterWorkspace';
 export { useAutoSave } from './useAutoSave';
 export type { SaveStatus } from './useAutoSave';
+export { usePatientContext } from './usePatientContext';

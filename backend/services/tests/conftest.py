@@ -36,6 +36,7 @@ from services import (
     ProblemClinicalContextService,
     ImagingService,
     ChartSectionService,
+    PatientContextService,
 )
 from services.data_seeder import seed_all
 
@@ -198,4 +199,17 @@ def chart_section_service(repositories):
         imaging_study_repo=repositories["imaging_study"],
         vitals_repo=repositories["vitals"],
         social_family_history_repo=repositories["social_family_history"],
+    )
+
+
+@pytest.fixture
+def patient_context_service(repositories):
+    """Create a PatientContextService for testing."""
+    return PatientContextService(
+        patient_repo=repositories["patient"],
+        allergy_repo=repositories["allergy"],
+        medication_request_repo=repositories["medication_request"],
+        vitals_repo=repositories["vitals"],
+        lab_result_repo=repositories["lab_result"],
+        visit_note_repo=repositories["visit_note"],
     )
