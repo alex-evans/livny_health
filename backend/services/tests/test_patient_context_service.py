@@ -21,7 +21,7 @@ from resources import (
     VisitNoteRepository,
 )
 from resources.vitals import VitalSign
-from resources.medication_request import MedicationRequest, MedicationRequestStatus
+from resources.medication_request import MedicationRequest, MedicationRequestStatus, Dosage
 from resources.allergy_intolerance import AllergyIntolerance, AllergyReaction, AllergyCriticality
 from resources.lab_result import LabResult
 from resources.visit_note import VisitNote
@@ -113,7 +113,7 @@ def sample_vitals():
         VitalSign(
             id="vital-2",
             vital_type="blood_pressure_systolic",
-            value=150.0,
+            value=160.0,  # >5% difference from 145 to show "improving"
             unit="mmHg",
             status="abnormal",
             subject=Reference.to("Patient", "patient-001", "John Doe"),
@@ -286,19 +286,17 @@ def sample_visits():
     return [
         VisitNote(
             id="visit-1",
-            visit_date=today - timedelta(days=14),
+            date=today - timedelta(days=14),
             visit_type="Follow-up",
             chief_complaint="Diabetes management",
-            provider_name="Dr. Smith",
-            patient=Reference.to("Patient", "patient-001", "John Doe"),
+            subject=Reference.to("Patient", "patient-001", "John Doe"),
         ),
         VisitNote(
             id="visit-2",
-            visit_date=today - timedelta(days=90),
+            date=today - timedelta(days=90),
             visit_type="Annual Physical",
             chief_complaint="Annual wellness exam",
-            provider_name="Dr. Johnson",
-            patient=Reference.to("Patient", "patient-001", "John Doe"),
+            subject=Reference.to("Patient", "patient-001", "John Doe"),
         ),
     ]
 
@@ -402,7 +400,7 @@ class TestVitalTrendCalculation:
         bp_vital = context.vitals["mostRecent"].get("blood_pressure_systolic")
 
         assert bp_vital is not None
-        assert bp_vital.trend == "improving"  # 145 < 150, both abnormal
+        assert bp_vital.trend == "improving"  # 145 < 160, >5% decrease while abnormal
 
     def test_worsening_o2_when_decreasing(
         self, service, mock_repos, sample_patient, sample_vitals,
@@ -763,11 +761,10 @@ class TestModeAwareFiltering:
         many_meds = [
             MedicationRequest(
                 id=f"med-{i}",
-                medication_name=f"Medication {i}",
-                dosage="10mg",
-                frequency="Once daily",
+                medication=CodeableConcept(code=f"med-{i}", display=f"Medication {i}"),
+                dosage_instruction=[Dosage(text="10mg Once daily", dose="10mg", frequency="Once daily")],
                 status=MedicationRequestStatus.ACTIVE,
-                patient=Reference.to("Patient", "patient-001", "John Doe"),
+                subject=Reference.to("Patient", "patient-001", "John Doe"),
                 authored_on=today - timedelta(days=60),
                 drug_class="Test Class",
             )
@@ -796,11 +793,10 @@ class TestModeAwareFiltering:
         many_visits = [
             VisitNote(
                 id=f"visit-{i}",
-                visit_date=today - timedelta(days=i * 14),
+                date=today - timedelta(days=i * 14),
                 visit_type="Follow-up",
                 chief_complaint=f"Visit {i}",
-                provider_name="Dr. Smith",
-                patient=Reference.to("Patient", "patient-001", "John Doe"),
+                subject=Reference.to("Patient", "patient-001", "John Doe"),
             )
             for i in range(10)
         ]
@@ -827,11 +823,10 @@ class TestModeAwareFiltering:
         many_visits = [
             VisitNote(
                 id=f"visit-{i}",
-                visit_date=today - timedelta(days=i * 14),
+                date=today - timedelta(days=i * 14),
                 visit_type="Follow-up",
                 chief_complaint=f"Visit {i}",
-                provider_name="Dr. Smith",
-                patient=Reference.to("Patient", "patient-001", "John Doe"),
+                subject=Reference.to("Patient", "patient-001", "John Doe"),
             )
             for i in range(10)
         ]
