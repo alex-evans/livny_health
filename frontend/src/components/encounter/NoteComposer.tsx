@@ -9,7 +9,9 @@ interface NoteComposerProps {
   initialContent: string;
   initialVersion: number;
   isExpanded: boolean;
+  isMinimized: boolean;
   onToggleExpand: () => void;
+  onToggleMinimize: () => void;
   onConflict?: (serverContent: string, serverVersion: number) => void;
   readOnly?: boolean;
   className?: string;
@@ -28,7 +30,9 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
       initialContent,
       initialVersion,
       isExpanded,
+      isMinimized,
       onToggleExpand,
+      onToggleMinimize,
       onConflict,
       readOnly = false,
       className,
@@ -62,8 +66,12 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
     }
 
     const handleExpand = useCallback(() => {
-      if (!isExpanded) onToggleExpand();
-    }, [isExpanded, onToggleExpand]);
+      if (isMinimized) {
+        onToggleMinimize(); // Restore from minimized first
+      } else if (!isExpanded) {
+        onToggleExpand();
+      }
+    }, [isExpanded, isMinimized, onToggleExpand, onToggleMinimize]);
 
     const handleCollapse = useCallback(() => {
       if (isExpanded) onToggleExpand();
@@ -105,7 +113,7 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
       <div
         className={cn(
           'bg-white border-t border-frost transition-all duration-200',
-          isExpanded ? 'h-[400px]' : 'h-[180px]',
+          isMinimized ? 'h-[48px]' : isExpanded ? 'h-[400px]' : 'h-[180px]',
           className
         )}
       >
@@ -118,50 +126,79 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
             <span className="text-[13px] text-text-tertiary">
               v{version}
             </span>
+            {isMinimized && wordCount > 0 && (
+              <span className="text-[13px] text-text-tertiary">
+                {wordCount} words
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
-            <SaveIndicator
-              status={saveStatus}
-              lastSavedAt={lastSavedAt}
-              wordCount={wordCount}
-              error={error}
-              onRetry={handleRetry}
-            />
+            {!isMinimized && (
+              <SaveIndicator
+                status={saveStatus}
+                lastSavedAt={lastSavedAt}
+                wordCount={wordCount}
+                error={error}
+                onRetry={handleRetry}
+              />
+            )}
 
-            <button
-              onClick={onToggleExpand}
-              className="p-2 text-text-secondary hover:text-text-primary hover:bg-frost/50 rounded transition-colors"
-              aria-label={isExpanded ? 'Collapse note' : 'Expand note'}
-            >
-              {isExpanded ? (
-                <ChevronDownIcon className="w-5 h-5" />
-              ) : (
-                <ChevronUpIcon className="w-5 h-5" />
+            <div className="flex items-center gap-1">
+              {/* Minimize/Restore button */}
+              <button
+                onClick={onToggleMinimize}
+                className="p-2 text-text-secondary hover:text-text-primary hover:bg-frost/50 rounded transition-colors"
+                aria-label={isMinimized ? 'Restore note' : 'Minimize note'}
+                title={isMinimized ? 'Restore note' : 'Minimize note'}
+              >
+                {isMinimized ? (
+                  <RestoreIcon className="w-5 h-5" />
+                ) : (
+                  <MinimizeIcon className="w-5 h-5" />
+                )}
+              </button>
+
+              {/* Expand/Collapse button - only show when not minimized */}
+              {!isMinimized && (
+                <button
+                  onClick={onToggleExpand}
+                  className="p-2 text-text-secondary hover:text-text-primary hover:bg-frost/50 rounded transition-colors"
+                  aria-label={isExpanded ? 'Collapse note' : 'Expand note'}
+                  title={isExpanded ? 'Collapse note' : 'Expand note'}
+                >
+                  {isExpanded ? (
+                    <ChevronDownIcon className="w-5 h-5" />
+                  ) : (
+                    <ChevronUpIcon className="w-5 h-5" />
+                  )}
+                </button>
               )}
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* Textarea */}
-        <div className="h-[calc(100%-48px)] p-comfortable">
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={handleChange}
-            readOnly={readOnly}
-            placeholder={readOnly ? '' : 'Document the visit here. Start with the subjective findings, then objective, assessment, and plan...'}
-            className={cn(
-              'w-full h-full resize-none bg-transparent',
-              'text-[15px] leading-relaxed text-text-primary',
-              'placeholder:text-text-tertiary',
-              'focus:outline-none',
-              'font-normal',
-              readOnly && 'text-text-secondary cursor-default'
-            )}
-            aria-label="Clinical note"
-          />
-        </div>
+        {/* Textarea - hidden when minimized */}
+        {!isMinimized && (
+          <div className="h-[calc(100%-48px)] p-comfortable">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={handleChange}
+              readOnly={readOnly}
+              placeholder={readOnly ? '' : 'Document the visit here. Start with the subjective findings, then objective, assessment, and plan...'}
+              className={cn(
+                'w-full h-full resize-none bg-transparent',
+                'text-[15px] leading-relaxed text-text-primary',
+                'placeholder:text-text-tertiary',
+                'focus:outline-none',
+                'font-normal',
+                readOnly && 'text-text-secondary cursor-default'
+              )}
+              aria-label="Clinical note"
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -192,6 +229,34 @@ function ChevronDownIcon({ className }: { className?: string }) {
       strokeWidth={2}
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
+function MinimizeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 12H6" />
+    </svg>
+  );
+}
+
+function RestoreIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
     </svg>
   );
 }

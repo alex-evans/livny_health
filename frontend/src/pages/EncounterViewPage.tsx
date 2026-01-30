@@ -27,6 +27,7 @@ export function EncounterViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [isNoteMinimized, setIsNoteMinimized] = useState(false);
   const [conflictData, setConflictData] = useState<{
     myContent: string;
     serverContent: string;
@@ -86,6 +87,10 @@ export function EncounterViewPage() {
 
   const handleToggleExpand = useCallback(() => {
     setIsNoteExpanded((prev) => !prev);
+  }, []);
+
+  const handleToggleMinimize = useCallback(() => {
+    setIsNoteMinimized((prev) => !prev);
   }, []);
 
   const handleConflict = useCallback(
@@ -294,7 +299,9 @@ export function EncounterViewPage() {
           initialContent={data.encounter.noteContent || ''}
           initialVersion={data.encounter.noteVersion}
           isExpanded={isNoteExpanded}
+          isMinimized={isNoteMinimized}
           onToggleExpand={handleToggleExpand}
+          onToggleMinimize={handleToggleMinimize}
           onConflict={handleConflict}
           readOnly={isReadOnly}
         />

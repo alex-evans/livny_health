@@ -103,6 +103,19 @@ from .encounter_status_service import (
     AddendumResult,
     InvalidStatusTransitionError,
 )
+from .patient_context_service import (
+    PatientContextService,
+    PatientContextResponse,
+    QuickContextSummary,
+    EnrichedVital,
+    EnrichedMedication,
+    EnrichedAllergy,
+    EnrichedProblem,
+    EnrichedLab,
+    EnrichedVisit,
+    DiscontinuedMedication,
+    PatientNotFoundError as PatientContextNotFoundError,
+)
 
 __all__ = [
     # Clinical Decision
@@ -184,4 +197,16 @@ __all__ = [
     "StatusTransitionResult",
     "AddendumResult",
     "InvalidStatusTransitionError",
+    # Patient Context Service
+    "PatientContextService",
+    "PatientContextResponse",
+    "QuickContextSummary",
+    "EnrichedVital",
+    "EnrichedMedication",
+    "EnrichedAllergy",
+    "EnrichedProblem",
+    "EnrichedLab",
+    "EnrichedVisit",
+    "DiscontinuedMedication",
+    "PatientContextNotFoundError",
 ]

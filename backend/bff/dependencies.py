@@ -80,6 +80,7 @@ from services import (
     ClinicalAlertServiceBuilder,
     EncounterNoteService,
     EncounterStatusService,
+    PatientContextService,
 )
 from services.data_seeder import seed_all
 
@@ -122,6 +123,7 @@ _chart_section_service: ChartSectionService | None = None
 _clinical_alert_service: ClinicalAlertService | None = None
 _encounter_note_service: EncounterNoteService | None = None
 _encounter_status_service: EncounterStatusService | None = None
+_patient_context_service: PatientContextService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -477,6 +479,20 @@ def get_encounter_status_service() -> EncounterStatusService:
     return _encounter_status_service
 
 
+def get_patient_context_service() -> PatientContextService:
+    global _patient_context_service
+    if _patient_context_service is None:
+        _patient_context_service = PatientContextService(
+            patient_repo=get_patient_repo(),
+            allergy_repo=get_allergy_repo(),
+            medication_request_repo=get_medication_request_repo(),
+            vitals_repo=get_vitals_repo(),
+            lab_result_repo=get_lab_result_repo(),
+            visit_note_repo=get_visit_note_repo(),
+        )
+    return _patient_context_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -531,6 +547,7 @@ def reset_singletons() -> None:
     global _problem_detail_service, _imaging_service, _vitals_service
     global _social_family_history_service, _chart_section_service
     global _clinical_alert_service, _encounter_note_service, _encounter_status_service
+    global _patient_context_service
     global _data_seeded
 
     _patient_repo = None
@@ -564,4 +581,5 @@ def reset_singletons() -> None:
     _clinical_alert_service = None
     _encounter_note_service = None
     _encounter_status_service = None
+    _patient_context_service = None
     _data_seeded = False

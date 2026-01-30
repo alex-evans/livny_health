@@ -20,3 +20,4 @@ export {
   InvalidTransitionException,
 } from './encounterApi';
 export type { CreateEncounterRequest, SaveNoteRequest, TransitionStatusRequest, CreateAddendumRequest } from './encounterApi';
+export { getPatientContext, getQuickContextSummary } from './patientContextApi';
