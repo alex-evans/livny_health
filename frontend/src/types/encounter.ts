@@ -178,3 +178,22 @@ export interface AddendumResult {
   encounterId: string;
   addendum: Addendum;
 }
+
+// SOAP section completeness
+export type SOAPCompleteness = 'empty' | 'partial' | 'complete';
+
+// Individual SOAP section
+export interface SOAPSection {
+  content: string;
+  completeness: SOAPCompleteness;
+  wordCount: number;
+}
+
+// Full SOAP mapping response
+export interface SOAPMappingResponse {
+  subjective: SOAPSection;
+  objective: SOAPSection;
+  assessment: SOAPSection;
+  plan: SOAPSection;
+  overallCompleteness: SOAPCompleteness;
+}

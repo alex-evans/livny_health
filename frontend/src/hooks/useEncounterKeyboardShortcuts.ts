@@ -6,6 +6,7 @@ interface UseEncounterKeyboardShortcutsOptions {
   onExpand?: () => void;
   onCollapse?: () => void;
   onSave?: () => void;
+  onToggleSOAPView?: () => void;
   enabled?: boolean;
 }
 
@@ -14,6 +15,7 @@ export function useEncounterKeyboardShortcuts({
   onExpand,
   onCollapse,
   onSave,
+  onToggleSOAPView,
   enabled = true,
 }: UseEncounterKeyboardShortcutsOptions): void {
   const handleKeyDown = useCallback(
@@ -31,9 +33,16 @@ export function useEncounterKeyboardShortcuts({
       }
 
       // Ctrl/Cmd+S: Manual save
-      if (isCtrlOrCmd && event.key.toLowerCase() === 's') {
+      if (isCtrlOrCmd && event.key.toLowerCase() === 's' && !event.shiftKey) {
         event.preventDefault();
         onSave?.();
+        return;
+      }
+
+      // Ctrl/Cmd+Shift+S: Toggle SOAP view
+      if (isCtrlOrCmd && event.shiftKey && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        onToggleSOAPView?.();
         return;
       }
 
@@ -60,7 +69,7 @@ export function useEncounterKeyboardShortcuts({
         return;
       }
     },
-    [enabled, noteTextareaRef, onExpand, onCollapse, onSave]
+    [enabled, noteTextareaRef, onExpand, onCollapse, onSave, onToggleSOAPView]
   );
 
   useEffect(() => {

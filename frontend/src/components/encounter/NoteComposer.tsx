@@ -1,6 +1,7 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { cn } from '../../utils/cn';
 import { SaveIndicator } from './SaveIndicator';
+import { SOAPToggleButton } from './SOAPToggleButton';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useEncounterKeyboardShortcuts } from '../../hooks/useEncounterKeyboardShortcuts';
 
@@ -13,6 +14,9 @@ interface NoteComposerProps {
   onToggleExpand: () => void;
   onToggleMinimize: () => void;
   onConflict?: (serverContent: string, serverVersion: number) => void;
+  onContentChange?: (content: string) => void;
+  showSOAPView?: boolean;
+  onToggleSOAPView?: () => void;
   readOnly?: boolean;
   className?: string;
 }
@@ -34,6 +38,9 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
       onToggleExpand,
       onToggleMinimize,
       onConflict,
+      onContentChange,
+      showSOAPView = false,
+      onToggleSOAPView,
       readOnly = false,
       className,
     },
@@ -86,6 +93,7 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
       onExpand: handleExpand,
       onCollapse: handleCollapse,
       onSave: handleSave,
+      onToggleSOAPView,
       enabled: true,
     });
 
@@ -100,9 +108,11 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setContent(e.target.value);
+        const newContent = e.target.value;
+        setContent(newContent);
+        onContentChange?.(newContent);
       },
-      [setContent]
+      [setContent, onContentChange]
     );
 
     const handleRetry = useCallback(() => {
@@ -141,6 +151,13 @@ export const NoteComposer = forwardRef<NoteComposerRef, NoteComposerProps>(
                 wordCount={wordCount}
                 error={error}
                 onRetry={handleRetry}
+              />
+            )}
+
+            {!isMinimized && onToggleSOAPView && (
+              <SOAPToggleButton
+                isActive={showSOAPView}
+                onClick={onToggleSOAPView}
               />
             )}
 

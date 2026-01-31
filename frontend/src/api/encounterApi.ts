@@ -8,6 +8,7 @@ import type {
   StatusTransitionResult,
   AddendumResult,
   EncounterNote,
+  SOAPMappingResponse,
 } from '../types';
 
 const BFF_URL = 'http://localhost:8000';
@@ -273,6 +274,31 @@ export async function getEncounterByAppointment(
 
   if (!response.ok) {
     throw new Error('Failed to fetch encounter for appointment');
+  }
+
+  return response.json();
+}
+
+export async function getSOAPMapping(
+  encounterId: string,
+  content: string
+): Promise<SOAPMappingResponse> {
+  const response = await fetch(
+    `${BFF_URL}/encounters/${encounterId}/soap-mapping`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Encounter not found');
+    }
+    throw new Error('Failed to get SOAP mapping');
   }
 
   return response.json();
