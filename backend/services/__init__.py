@@ -116,6 +116,12 @@ from .patient_context_service import (
     DiscontinuedMedication,
     PatientNotFoundError as PatientContextNotFoundError,
 )
+from .soap_mapping_service import (
+    SOAPMappingService,
+    SOAPMapping,
+    SOAPSection,
+    Completeness,
+)
 
 __all__ = [
     # Clinical Decision
@@ -209,4 +215,9 @@ __all__ = [
     "EnrichedVisit",
     "DiscontinuedMedication",
     "PatientContextNotFoundError",
+    # SOAP Mapping Service
+    "SOAPMappingService",
+    "SOAPMapping",
+    "SOAPSection",
+    "Completeness",
 ]

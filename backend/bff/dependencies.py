@@ -81,6 +81,7 @@ from services import (
     EncounterNoteService,
     EncounterStatusService,
     PatientContextService,
+    SOAPMappingService,
 )
 from services.data_seeder import seed_all
 
@@ -124,6 +125,7 @@ _clinical_alert_service: ClinicalAlertService | None = None
 _encounter_note_service: EncounterNoteService | None = None
 _encounter_status_service: EncounterStatusService | None = None
 _patient_context_service: PatientContextService | None = None
+_soap_mapping_service: SOAPMappingService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -493,6 +495,13 @@ def get_patient_context_service() -> PatientContextService:
     return _patient_context_service
 
 
+def get_soap_mapping_service() -> SOAPMappingService:
+    global _soap_mapping_service
+    if _soap_mapping_service is None:
+        _soap_mapping_service = SOAPMappingService()
+    return _soap_mapping_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -547,7 +556,7 @@ def reset_singletons() -> None:
     global _problem_detail_service, _imaging_service, _vitals_service
     global _social_family_history_service, _chart_section_service
     global _clinical_alert_service, _encounter_note_service, _encounter_status_service
-    global _patient_context_service
+    global _patient_context_service, _soap_mapping_service
     global _data_seeded
 
     _patient_repo = None
@@ -582,4 +591,5 @@ def reset_singletons() -> None:
     _encounter_note_service = None
     _encounter_status_service = None
     _patient_context_service = None
+    _soap_mapping_service = None
     _data_seeded = False

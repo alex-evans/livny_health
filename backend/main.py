@@ -26,6 +26,7 @@ from bff.chart_sections import router as chart_sections_router
 from bff.alerts import router as alerts_router
 from bff.encounters import router as encounters_router, appointment_router, patient_router as patient_encounters_router
 from bff.patient_context import router as patient_context_router
+from bff.soap_mapping import router as soap_mapping_router
 
 
 @asynccontextmanager
@@ -81,3 +82,4 @@ app.include_router(encounters_router)
 app.include_router(appointment_router)
 app.include_router(patient_encounters_router)
 app.include_router(patient_context_router)
+app.include_router(soap_mapping_router)

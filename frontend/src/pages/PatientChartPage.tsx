@@ -3,7 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, Input, Button, Select, AllergyBlockModal, AllergyWarningBanner, DrugInteractionWarning, DrugInteractionBlockModal, ClinicalAlertBanner, AlertBadge, type AllergyOverrideData, type InteractionOverrideData } from '../components/ui';
 import { MedicationDetailModal, MedicationTooltip } from '../components/medication';
 import { AllergiesSection, RecentLabsSection, VisitTimeline, ProblemListSection, ProblemDetailModal, ImagingSection, VitalSignsSection, SocialFamilyHistorySection, ChartNavigation } from '../components/patient';
-import { NoteComposer, EncounterStatusBanner, EncounterActionBar, VersionConflictModal, AddendumComposer, AuditTrailModal, type NoteComposerRef } from '../components/encounter';
+import { NoteComposer, EncounterStatusBanner, EncounterActionBar, VersionConflictModal, AddendumComposer, AuditTrailModal, SOAPViewPanel, type NoteComposerRef } from '../components/encounter';
+import { useSOAPMapping } from '../hooks/useSOAPMapping';
 // PatientContextContainer removed - navigation provides direct access to each section
 import { useDebounce, useMedicationFreshness, useChartNavigation, useKeyboardShortcuts, useAlerts, useEncounterWorkspace } from '../hooks';
 import { searchMedications, getMedicationDefaults, checkAllergyConflict, logAllergyOverride, checkDrugInteractions, logInteractionOverride, submitPrescription, discontinueMedication, getProblemDetail, reactivateProblem, getEncounterAudit } from '../api';
@@ -268,6 +269,8 @@ export function PatientChartPage() {
   // Encounter UI state
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const [isNoteMinimized, setIsNoteMinimized] = useState(false);
+  const [showSOAPView, setShowSOAPView] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
   const [versionConflict, setVersionConflict] = useState<{
     myContent: string;
     serverContent: string;
@@ -353,6 +356,20 @@ export function PatientChartPage() {
   const [problemDetailError, setProblemDetailError] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Initialize note content when encounter loads
+  useEffect(() => {
+    if (encounter?.noteContent) {
+      setNoteContent(encounter.noteContent);
+    }
+  }, [encounter?.noteContent]);
+
+  // SOAP mapping hook
+  const { mapping: soapMapping, isLoading: soapLoading, error: soapError } = useSOAPMapping({
+    encounterId: encounter?.id || '',
+    content: noteContent,
+    enabled: showSOAPView && !!encounter?.id,
+  });
 
   // Clinical alerts hook
   const {
@@ -916,6 +933,14 @@ export function PatientChartPage() {
     setIsNoteMinimized((prev) => !prev);
   }, []);
 
+  const handleToggleSOAPView = useCallback(() => {
+    setShowSOAPView((prev) => !prev);
+  }, []);
+
+  const handleNoteContentChange = useCallback((content: string) => {
+    setNoteContent(content);
+  }, []);
+
   // Determine if we should show encounter workspace
   const showEncounterWorkspace = encounter && encounterMode !== 'review';
 
@@ -1378,6 +1403,15 @@ export function PatientChartPage() {
                 className="mb-normal"
               />
             )}
+            {/* SOAP View Panel - shows when toggled and encounter is active */}
+            {showSOAPView && encounter && (
+              <SOAPViewPanel
+                mapping={soapMapping}
+                isLoading={soapLoading}
+                error={soapError}
+                className="mb-normal"
+              />
+            )}
             {renderMainContent()}
           </div>
         </div>
@@ -1424,6 +1458,9 @@ export function PatientChartPage() {
               onToggleExpand={handleToggleNoteExpand}
               onToggleMinimize={handleToggleNoteMinimize}
               onConflict={handleVersionConflict}
+              onContentChange={handleNoteContentChange}
+              showSOAPView={showSOAPView}
+              onToggleSOAPView={handleToggleSOAPView}
               readOnly={!isNoteEditable}
             />
             <EncounterActionBar

@@ -9,3 +9,6 @@ export { EncounterActionBar } from './EncounterActionBar';
 export { SignatureBlock } from './SignatureBlock';
 export { AddendumComposer } from './AddendumComposer';
 export { AuditTrailModal } from './AuditTrailModal';
+export { SOAPViewPanel } from './SOAPViewPanel';
+export { SOAPSectionCard } from './SOAPSectionCard';
+export { SOAPToggleButton } from './SOAPToggleButton';

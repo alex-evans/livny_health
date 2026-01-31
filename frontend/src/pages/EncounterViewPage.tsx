@@ -17,7 +17,9 @@ import {
   SignatureBlock,
   AddendumComposer,
   AuditTrailModal,
+  SOAPViewPanel,
 } from '../components/encounter';
+import { useSOAPMapping } from '../hooks/useSOAPMapping';
 import type { NoteComposerRef } from '../components/encounter';
 import { cn } from '../utils/cn';
 
@@ -28,6 +30,8 @@ export function EncounterViewPage() {
   const [error, setError] = useState<string | null>(null);
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const [isNoteMinimized, setIsNoteMinimized] = useState(false);
+  const [showSOAPView, setShowSOAPView] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
   const [conflictData, setConflictData] = useState<{
     myContent: string;
     serverContent: string;
@@ -42,6 +46,13 @@ export function EncounterViewPage() {
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
 
   const noteComposerRef = useRef<NoteComposerRef>(null);
+
+  // SOAP mapping hook
+  const { mapping: soapMapping, isLoading: soapLoading, error: soapError } = useSOAPMapping({
+    encounterId: encounterId || '',
+    content: noteContent,
+    enabled: showSOAPView && !!encounterId,
+  });
 
   // Get user info from session storage
   const getUserInfo = useCallback(() => {
@@ -76,6 +87,7 @@ export function EncounterViewPage() {
     getEncounter(encounterId)
       .then((result) => {
         setData(result);
+        setNoteContent(result.encounter.noteContent || '');
       })
       .catch((err) => {
         setError(err.message || 'Failed to load encounter');
@@ -91,6 +103,14 @@ export function EncounterViewPage() {
 
   const handleToggleMinimize = useCallback(() => {
     setIsNoteMinimized((prev) => !prev);
+  }, []);
+
+  const handleToggleSOAPView = useCallback(() => {
+    setShowSOAPView((prev) => !prev);
+  }, []);
+
+  const handleNoteContentChange = useCallback((content: string) => {
+    setNoteContent(content);
   }, []);
 
   const handleConflict = useCallback(
@@ -264,10 +284,20 @@ export function EncounterViewPage() {
         {/* Upper zone - scrollable clinical data */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-6xl mx-auto py-normal">
-            <EncounterDataPanel
-              context={data.context}
-              className="bg-white rounded-lg shadow-card mx-comfortable"
-            />
+            {/* Show SOAP view or EncounterDataPanel based on toggle */}
+            {showSOAPView ? (
+              <SOAPViewPanel
+                mapping={soapMapping}
+                isLoading={soapLoading}
+                error={soapError}
+                className="mx-comfortable"
+              />
+            ) : (
+              <EncounterDataPanel
+                context={data.context}
+                className="bg-white rounded-lg shadow-card mx-comfortable"
+              />
+            )}
 
             {/* Signature block for signed encounters */}
             {isSigned && data.encounter.signedByName && data.encounter.signedAt && (
@@ -303,6 +333,9 @@ export function EncounterViewPage() {
           onToggleExpand={handleToggleExpand}
           onToggleMinimize={handleToggleMinimize}
           onConflict={handleConflict}
+          onContentChange={handleNoteContentChange}
+          showSOAPView={showSOAPView}
+          onToggleSOAPView={handleToggleSOAPView}
           readOnly={isReadOnly}
         />
       </div>
