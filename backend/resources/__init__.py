@@ -143,6 +143,14 @@ from .encounter_status_history import (
     EncounterStatusHistory,
     EncounterStatusHistoryRepository,
 )
+from .encounter_prompt import (
+    EncounterPrompt,
+    PromptGenerationResult,
+    PromptType,
+    PromptStatus,
+    ViewerSection,
+    EncounterPromptRepository,
+)
 
 __all__ = [
     # Patient
@@ -274,4 +282,11 @@ __all__ = [
     # EncounterStatusHistory
     "EncounterStatusHistory",
     "EncounterStatusHistoryRepository",
+    # EncounterPrompt
+    "EncounterPrompt",
+    "PromptGenerationResult",
+    "PromptType",
+    "PromptStatus",
+    "ViewerSection",
+    "EncounterPromptRepository",
 ]
