@@ -33,6 +33,7 @@ from resources import (
     EncounterNoteVersionRepository,
     EncounterStatusHistoryRepository,
 )
+from resources.encounter_prompt import EncounterPromptRepository
 
 # PostgreSQL repository imports
 from resources.patient.postgres_repository import PostgresPatientRepository
@@ -60,6 +61,9 @@ from resources.encounter_note_version.postgres_repository import (
 from resources.encounter_status_history.postgres_repository import (
     PostgresEncounterStatusHistoryRepository,
 )
+from resources.encounter_prompt.postgres_repository import (
+    PostgresEncounterPromptRepository,
+)
 
 # Service imports
 from services import (
@@ -82,6 +86,10 @@ from services import (
     EncounterStatusService,
     PatientContextService,
     SOAPMappingService,
+)
+from services.encounter_prompt_service import (
+    EncounterPromptService,
+    EncounterPromptServiceBuilder,
 )
 from services.data_seeder import seed_all
 
@@ -106,6 +114,7 @@ _social_family_history_repo = None
 _clinical_alert_repo = None
 _encounter_note_version_repo = None
 _encounter_status_history_repo = None
+_encounter_prompt_repo = None
 
 # Singleton service instances
 _clinical_decision_service: ClinicalDecisionService | None = None
@@ -126,6 +135,7 @@ _encounter_note_service: EncounterNoteService | None = None
 _encounter_status_service: EncounterStatusService | None = None
 _patient_context_service: PatientContextService | None = None
 _soap_mapping_service: SOAPMappingService | None = None
+_encounter_prompt_service: EncounterPromptService | None = None
 
 # Track if data has been seeded
 _data_seeded: bool = False
@@ -303,6 +313,16 @@ def get_encounter_status_history_repo():
         else:
             _encounter_status_history_repo = EncounterStatusHistoryRepository()
     return _encounter_status_history_repo
+
+
+def get_encounter_prompt_repo():
+    global _encounter_prompt_repo
+    if _encounter_prompt_repo is None:
+        if _is_postgres():
+            _encounter_prompt_repo = PostgresEncounterPromptRepository(_session_factory)
+        else:
+            _encounter_prompt_repo = EncounterPromptRepository()
+    return _encounter_prompt_repo
 
 
 def get_clinical_decision_service() -> ClinicalDecisionService:
@@ -502,6 +522,19 @@ def get_soap_mapping_service() -> SOAPMappingService:
     return _soap_mapping_service
 
 
+def get_encounter_prompt_service() -> EncounterPromptService:
+    global _encounter_prompt_service
+    if _encounter_prompt_service is None:
+        _encounter_prompt_service = EncounterPromptServiceBuilder.build(
+            prompt_repo=get_encounter_prompt_repo(),
+            encounter_repo=get_encounter_repo(),
+            encounter_note_service=get_encounter_note_service(),
+            patient_repo=get_patient_repo(),
+            alert_repo=get_clinical_alert_repo(),
+        )
+    return _encounter_prompt_service
+
+
 def ensure_data_seeded() -> None:
     """Ensure repositories are seeded with initial data."""
     global _data_seeded
@@ -550,13 +583,14 @@ def reset_singletons() -> None:
     global _lab_result_repo, _visit_note_repo, _imaging_study_repo, _vitals_repo
     global _social_family_history_repo, _clinical_alert_repo
     global _encounter_note_version_repo, _encounter_status_history_repo
+    global _encounter_prompt_repo
     global _clinical_decision_service, _prescribing_service, _scheduling_service
     global _medication_search_service, _lab_history_service, _visit_history_service
     global _problem_list_service, _problem_clinical_context_service
     global _problem_detail_service, _imaging_service, _vitals_service
     global _social_family_history_service, _chart_section_service
     global _clinical_alert_service, _encounter_note_service, _encounter_status_service
-    global _patient_context_service, _soap_mapping_service
+    global _patient_context_service, _soap_mapping_service, _encounter_prompt_service
     global _data_seeded
 
     _patient_repo = None
@@ -574,6 +608,7 @@ def reset_singletons() -> None:
     _clinical_alert_repo = None
     _encounter_note_version_repo = None
     _encounter_status_history_repo = None
+    _encounter_prompt_repo = None
     _clinical_decision_service = None
     _prescribing_service = None
     _scheduling_service = None
@@ -592,4 +627,5 @@ def reset_singletons() -> None:
     _encounter_status_service = None
     _patient_context_service = None
     _soap_mapping_service = None
+    _encounter_prompt_service = None
     _data_seeded = False
