@@ -1,0 +1,8 @@
+.venv
+__pycache__
+*.pyc
+.git
+*.log
+.DS_Store
+.pytest_cache
+.coverage

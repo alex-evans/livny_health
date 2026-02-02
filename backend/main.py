@@ -85,3 +85,9 @@ app.include_router(appointment_router)
 app.include_router(patient_encounters_router)
 app.include_router(patient_context_router)
 app.include_router(soap_mapping_router)
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker."""
+    return {"status": "healthy"}
