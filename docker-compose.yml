@@ -1,0 +1,66 @@
+# Full-stack Docker Compose for Livny Health
+# Usage: docker compose up
+# Access: http://localhost:5173 (frontend) | http://localhost:8000 (API)
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: livny_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: livny
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: livny_backend
+    ports:
+      - "8000:8000"
+    environment:
+      LIVNY_STORAGE_BACKEND: postgres
+      LIVNY_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/livny
+    volumes:
+      # Mount source for hot reload
+      - ./backend:/app
+      # Prevent overwriting installed packages
+      - /app/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Use bash to run script (handles volume mount overriding built files)
+    command: ["bash", "start.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: livny_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source for hot reload
+      - ./frontend:/app
+      # Prevent overwriting node_modules
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

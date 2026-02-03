@@ -1,4 +1,4 @@
-.PHONY: dev frontend backend install db test dev-inmemory
+.PHONY: dev frontend backend install db test dev-inmemory docker docker-build docker-down
 
 # Database URL for local development
 export LIVNY_DATABASE_URL := postgresql+asyncpg://postgres:postgres@localhost:5432/livny
@@ -38,4 +38,17 @@ install:
 test:
 	cd backends && source .venv/bin/activate && uv sync && pytest
 	cd frontend && npm test
+
+# Docker commands (no local dependencies needed except Docker)
+docker:
+	@echo "Starting all services with Docker..."
+	docker compose up
+
+docker-build:
+	@echo "Building and starting all services..."
+	docker compose up --build
+
+docker-down:
+	@echo "Stopping all services..."
+	docker compose down
 
